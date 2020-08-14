@@ -25,7 +25,7 @@ namespace Microsoft.Build.UnitTests
             _env = TestEnvironment.Create(testOutput);
         }
 
-        private static bool IsInternable(IInternable internable)
+        private static bool IsInternable(CharacterSpanBuilder internable)
         {
             string i1 = OpportunisticIntern.InternableToString(internable);
             string i2 = OpportunisticIntern.InternableToString(internable);
@@ -33,19 +33,14 @@ namespace Microsoft.Build.UnitTests
             return Object.ReferenceEquals(i1, i2);
         }
 
-        private static void AssertInternable(IInternable internable)
+        private static void AssertInternable(CharacterSpanBuilder internable)
         {
             Assert.True(IsInternable(internable));
         }
 
-        private static void AssertInternable(StringBuilder sb)
-        {
-            AssertInternable(new StringBuilderInternTarget(sb));
-        }
-
         private static string AssertInternable(char[] ch, int startIndex, int count)
         {
-            var target = new CharArrayInternTarget(ch, startIndex, count);
+            var target = new CharacterSpanBuilder(ch.AsSpan(startIndex, count));
             AssertInternable(target);
             Assert.Equal(target.Length, count);
 
@@ -54,28 +49,21 @@ namespace Microsoft.Build.UnitTests
 
         private static void AssertInternable(string value)
         {
-            AssertInternable(new StringBuilder(value));
             AssertInternable(value.ToCharArray(), 0, value.ToCharArray().Length);
         }
 
-        private static void AssertNotInternable(IInternable internable)
+        private static void AssertNotInternable(CharacterSpanBuilder internable)
         {
             Assert.False(IsInternable(internable));
         }
 
-        private static void AssertNotInternable(StringBuilder sb)
-        {
-            AssertNotInternable(new StringBuilderInternTarget(sb));
-        }
-
         private static void AssertNotInternable(char[] ch)
         {
-            AssertNotInternable(new CharArrayInternTarget(ch, ch.Length));
+            AssertNotInternable(new CharacterSpanBuilder(ch.AsSpan()));
         }
 
         protected static void AssertNotInternable(string value)
         {
-            AssertNotInternable(new StringBuilder(value));
             AssertNotInternable(value.ToCharArray());
         }
 

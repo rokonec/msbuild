@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
+using Microsoft.Build.Shared;
+
 namespace Microsoft.Build
 {
     /// <summary>
@@ -45,7 +47,7 @@ namespace Microsoft.Build
             /// </summary>
             /// <param name="internable">The internable describing the string we're looking for.</param>
             /// <returns>The string matching the internable or null if the handle is referencing a collected string or the string is different.</returns>
-            public string GetString<T>(T internable) where T : IInternable
+            public string GetString(CharacterSpanBuilder internable)
             {
                 if (WeakHandle.IsAllocated && WeakHandle.Target is string str)
                 {
@@ -99,7 +101,7 @@ namespace Microsoft.Build
         /// </summary>
         /// <param name="internable">The internable to compute the hash code for.</param>
         /// <returns>The 32-bit hash code.</returns>
-        internal static int GetInternableHashCode<T>(T internable) where T : IInternable
+        internal static int GetInternableHashCode(CharacterSpanBuilder internable)
         {
             int hashCode = 5381;
             for (int i = 0; i < internable.Length; i++)

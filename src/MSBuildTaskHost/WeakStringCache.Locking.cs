@@ -4,6 +4,8 @@
 using System;
 using System.Collections.Generic;
 
+using Microsoft.Build.Shared;
+
 namespace Microsoft.Build
 {
     /// <summary>
@@ -25,7 +27,7 @@ namespace Microsoft.Build
         /// </summary>
         /// <param name="internable">The internable describing the string we're looking for.</param>
         /// <returns>A string matching the given internable.</returns>
-        public string GetOrCreateEntry<T>(T internable, out bool cacheHit) where T : IInternable
+        public string GetOrCreateEntry(CharacterSpanBuilder internable, out bool cacheHit)
         {
             int hashCode = GetInternableHashCode(internable);
 

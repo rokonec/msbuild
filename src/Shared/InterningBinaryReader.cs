@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Globalization;
 
 using ErrorUtilities = Microsoft.Build.Shared.ErrorUtilities;
+using Microsoft.Build.Shared;
 
 namespace Microsoft.Build
 {
@@ -81,7 +82,7 @@ namespace Microsoft.Build
 
                 char[] charBuffer = _buffer.CharBuffer;
 
-                StringBuilder sb = null;
+                CharacterSpanBuilder sb = new CharacterSpanBuilder();
                 do
                 {
                     readLength = ((stringLength - currPos) > MaxCharsBuffer) ? MaxCharsBuffer : (stringLength - currPos);
@@ -135,17 +136,12 @@ namespace Microsoft.Build
                         return OpportunisticIntern.CharArrayToString(charBuffer, charsRead);
                     }
 
-                    if (sb == null)
-                    {
-                        sb = new StringBuilder(stringLength); // Actual string length in chars may be smaller.
-                    }
-
                     sb.Append(charBuffer, 0, charsRead);
                     currPos += n;
                 }
                 while (currPos < stringLength);
 
-                return OpportunisticIntern.StringBuilderToString(sb);
+                return OpportunisticIntern.InternableToString(sb);
             }
             catch (Exception e)
             {

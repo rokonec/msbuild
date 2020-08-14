@@ -165,7 +165,8 @@ namespace Microsoft.Build.Tasks
 
                 foreach (PropertyNameValuePair propertyNameValuePair in finalPropertiesList)
                 {
-                    string propertyValue = OpportunisticIntern.StringBuilderToString(propertyNameValuePair.Value);
+                    // TODO
+                    string propertyValue = OpportunisticIntern.InternStringIfPossible(propertyNameValuePair.Value.ToString());
                     finalPropertiesTable[propertyNameValuePair.Name] = propertyValue;
                     log?.LogMessageFromText(
                         $"  {propertyNameValuePair.Name}={propertyValue}",

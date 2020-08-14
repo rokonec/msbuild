@@ -187,7 +187,7 @@ namespace Microsoft.Build.Shared
                 return StringBuilderCache.GetStringAndRelease(escapedStringBuilder);
             }
 
-            string escapedString = OpportunisticIntern.StringBuilderToString(escapedStringBuilder);
+            string escapedString = OpportunisticIntern.InternStringIfPossible(escapedStringBuilder.ToString());
             StringBuilderCache.Release(escapedStringBuilder);
 
             lock (s_unescapedToEscapedStrings)

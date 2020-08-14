@@ -43,7 +43,7 @@ namespace Microsoft.Build
             /// Converts the given internable candidate to its string representation. Efficient implementions have side-effects
             /// of caching the results to end up with as few duplicates on the managed heap as practical.
             /// </summary>
-            string InterningToString<T>(T candidate) where T : IInternable;
+            string InterningToString(CharacterSpanBuilder candidate);
 
             /// <summary>
             /// Prints implementation specific interning statistics to the console.
@@ -189,17 +189,9 @@ namespace Microsoft.Build
         /// <summary>
         /// Intern the given internable.
         /// </summary>
-        internal static string InternableToString<T>(T candidate) where T : IInternable
+        internal static string InternableToString(CharacterSpanBuilder candidate)
         {
             return Instance.InternableToStringImpl(candidate);
-        }
-
-        /// <summary>
-        /// Potentially Intern the given string builder.
-        /// </summary>
-        internal static string StringBuilderToString(StringBuilder candidate)
-        {
-            return Instance.InternableToStringImpl(new StringBuilderInternTarget(candidate));
         }
 
         /// <summary>
@@ -207,7 +199,8 @@ namespace Microsoft.Build
         /// </summary>
         internal static string CharArrayToString(char[] candidate, int count)
         {
-            return Instance.InternableToStringImpl(new CharArrayInternTarget(candidate, count));
+            CharacterSpanBuilder span = new CharacterSpanBuilder(candidate.AsSpan<char>(0, count));
+            return Instance.InternableToStringImpl(span);
         }
 
         /// <summary>
@@ -215,7 +208,8 @@ namespace Microsoft.Build
         /// </summary>
         internal static string CharArrayToString(char[] candidate, int startIndex, int count)
         {
-            return Instance.InternableToStringImpl(new CharArrayInternTarget(candidate, startIndex, count));
+            CharacterSpanBuilder span = new CharacterSpanBuilder(candidate.AsSpan<char>(startIndex, count));
+            return Instance.InternableToStringImpl(span);
         }
 
         /// <summary>
@@ -225,13 +219,14 @@ namespace Microsoft.Build
         /// <returns>The interned string, or the same string if it could not be interned.</returns>
         internal static string InternStringIfPossible(string candidate)
         {
-            return Instance.InternableToStringImpl(new StringInternTarget(candidate));
+            CharacterSpanBuilder span = new CharacterSpanBuilder(candidate);
+            return Instance.InternableToStringImpl(span);
         }
 
         /// <summary>
         /// Intern the given internable.
         /// </summary>
-        private string InternableToStringImpl<T>(T candidate) where T : IInternable
+        private string InternableToStringImpl(CharacterSpanBuilder candidate)
         {
             if (candidate.Length == 0)
             {
@@ -275,7 +270,7 @@ namespace Microsoft.Build
             }
         }
 
-        private static bool TryInternHardcodedString<T>(T candidate, string str, ref string interned) where T : IInternable
+        private static bool TryInternHardcodedString(CharacterSpanBuilder candidate, string str, ref string interned)
         {
             Debug.Assert(candidate.Length == str.Length);
 
@@ -294,7 +289,7 @@ namespace Microsoft.Build
         /// <returns>
         /// True if the candidate matched a hardcoded literal, null if it matched a "do not intern" string, false otherwise.
         /// </returns>
-        private static bool? TryMatchHardcodedStrings<T>(T candidate, out string interned) where T : IInternable
+        private static bool? TryMatchHardcodedStrings(CharacterSpanBuilder candidate, out string interned)
         {
             int length = candidate.Length;
             interned = null;
@@ -457,7 +452,7 @@ namespace Microsoft.Build
             /// <summary>
             /// Intern the given internable.
             /// </summary>
-            public string InterningToString<T>(T candidate) where T : IInternable
+            public string InterningToString(CharacterSpanBuilder candidate)
             {
                 if (_gatherStatistics)
                 {
@@ -506,7 +501,7 @@ namespace Microsoft.Build
             /// Try to intern the string.
             /// The return value indicates the how the string was interned (if at all).
             /// </summary>
-            private InternResult TryIntern<T>(T candidate, out string interned) where T : IInternable
+            private InternResult TryIntern(CharacterSpanBuilder candidate, out string interned)
             {
                 // First, try the hard coded intern strings.
                 bool? hardcodedMatchResult = TryMatchHardcodedStrings(candidate, out interned);
@@ -523,7 +518,7 @@ namespace Microsoft.Build
             /// <summary>
             /// Version of Intern that gathers statistics
             /// </summary>
-            private string InternWithStatistics<T>(T candidate) where T : IInternable
+            private string InternWithStatistics(CharacterSpanBuilder candidate)
             {
                 lock (_missedHardcodedStrings)
                 {
@@ -730,7 +725,7 @@ namespace Microsoft.Build
             /// <summary>
             /// Intern the given internable.
             /// </summary>
-            public string InterningToString<T>(T candidate) where T : IInternable
+            public string InterningToString(CharacterSpanBuilder candidate)
             {
                 if (_gatherStatistics)
                 {
@@ -809,7 +804,7 @@ namespace Microsoft.Build
             /// Return false if it was added to the intern list, but wasn't there already.
             /// Return null if it didn't meet the length criteria for any of the buckets. Interning was rejected
             /// </summary>
-            private bool? TryIntern<T>(T candidate, out string interned) where T : IInternable
+            private bool? TryIntern(CharacterSpanBuilder candidate, out string interned)
             {
                 int length = candidate.Length;
                 interned = null;
@@ -897,7 +892,7 @@ namespace Microsoft.Build
             /// <summary>
             /// Version of Intern that gathers statistics
             /// </summary>
-            private string InternWithStatistics<T>(T candidate) where T : IInternable
+            private string InternWithStatistics(CharacterSpanBuilder candidate)
             {
                 lock (_missedStrings)
                 {
@@ -966,7 +961,7 @@ namespace Microsoft.Build
                 /// Try to get one element from the list. Upon leaving the function 'candidate' will be at the head of the Mru list.
                 /// This function is not thread-safe.
                 /// </summary>
-                internal bool TryGet<T>(T candidate, out string interned) where T : IInternable
+                internal bool TryGet(CharacterSpanBuilder candidate, out string interned)
                 {
                     if (_size == 0)
                     {

@@ -21,6 +21,7 @@
     <ProjectReference Include="..\Framework\Microsoft.Build.Framework.csproj" />
     
     <PackageReference Include="System.Collections.Immutable" />
+    <PackageReference Include="System.Memory" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFrameworkIdentifier)' != '.NETStandard'">
@@ -127,8 +128,8 @@
     <Compile Include="..\Shared\InprocTrackingNativeMethods.cs">
       <Link>Shared\InprocTrackingNativeMethods.cs</Link>
     </Compile>
-    <Compile Include="..\Shared\IInternable.cs">
-      <Link>Shared\IInternable.cs</Link>
+    <Compile Include="..\Shared\CharacterSpanBuilder.cs">
+      <Link>Shared\CharacterSpanBuilder.cs</Link>
     </Compile>
     <Compile Include="..\Shared\WeakStringCache.cs">
       <Link>Shared\WeakStringCache.cs</Link>

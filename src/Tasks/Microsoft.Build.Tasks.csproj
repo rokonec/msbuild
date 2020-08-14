@@ -81,8 +81,8 @@
     <Compile Include="..\Shared\NGen.cs">
       <Link>NGen.cs</Link>
     </Compile>
-    <Compile Include="..\Shared\IInternable.cs">
-      <Link>IInternable.cs</Link>
+    <Compile Include="..\Shared\CharacterSpanBuilder.cs">
+      <Link>CharacterSpanBuilder.cs</Link>
     </Compile>
     <Compile Include="..\Shared\WeakStringCache.cs">
       <Link>WeakStringCache.cs</Link>
