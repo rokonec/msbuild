@@ -136,7 +136,7 @@ namespace Microsoft.Build.UnitTests.Construction
                     {
                         if (property.Name == "ParameterLocations")
                         {
-                            var values = new List<KeyValuePair<string, ElementLocation>>(((ICollection<KeyValuePair<string, ElementLocation>>)property.GetValue(element, null)));
+                            var values = new List<KeyValuePair<string, ElementLocation>>((ICollection<KeyValuePair<string, ElementLocation>>)property.GetValue(element, null));
 
                             values.ForEach(value => attributeLocations.Add(value.Key + ":" + value.Value.LocationString));
                         }
