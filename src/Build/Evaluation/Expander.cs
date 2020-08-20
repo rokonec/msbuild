@@ -1758,7 +1758,7 @@ namespace Microsoft.Build.Evaluation
                     string expandedItemVector;
                     CharacterSpanBuilder builder = new CharacterSpanBuilder();
 
-                    brokeEarlyNonEmpty = ExpandExpressionCaptureIntoStringBuilder(expander, expressionCapture, items, elementLocation, builder, options);
+                    brokeEarlyNonEmpty = ExpandExpressionCaptureIntoStringBuilder(expander, expressionCapture, items, elementLocation, ref builder, options);
 
                     if (brokeEarlyNonEmpty)
                     {
@@ -1954,7 +1954,7 @@ namespace Microsoft.Build.Evaluation
                         builder.Append(expression, lastStringIndex, matches[i].Index - lastStringIndex);
                     }
 
-                    bool brokeEarlyNonEmpty = ExpandExpressionCaptureIntoStringBuilder(expander, matches[i], items, elementLocation, builder, options);
+                    bool brokeEarlyNonEmpty = ExpandExpressionCaptureIntoStringBuilder(expander, matches[i], items, elementLocation, ref builder, options);
 
                     if (brokeEarlyNonEmpty)
                     {
@@ -2022,7 +2022,7 @@ namespace Microsoft.Build.Evaluation
                 ExpressionShredder.ItemExpressionCapture capture,
                 IItemProvider<S> evaluatedItems,
                 IElementLocation elementLocation,
-                CharacterSpanBuilder builder,
+                ref CharacterSpanBuilder builder,
                 ExpanderOptions options
                 )
                 where S : class, IItem
