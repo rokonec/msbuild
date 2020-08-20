@@ -41,7 +41,7 @@ namespace Microsoft.Build
         /// Comment about constructing.
         /// </summary>
         private InterningBinaryReader(Stream input, Buffer buffer)
-            : base(input, buffer.Encoding)
+            : base(input, Encoding.UTF8)
         {
             if (input == null)
             {
@@ -49,7 +49,7 @@ namespace Microsoft.Build
             }
 
             _buffer = buffer;
-            _decoder = buffer.Encoding.GetDecoder();
+            _decoder = Encoding.UTF8.GetDecoder();
         }
 
         /// <summary>
@@ -66,7 +66,7 @@ namespace Microsoft.Build
                 int n = 0;
                 int stringLength;
                 int readLength;
-                int charsRead;
+                int charsRead = 0;
 
                 // Length of the string in bytes, not chars
                 stringLength = Read7BitEncodedInt();
@@ -81,10 +81,7 @@ namespace Microsoft.Build
                 }
 
                 char[] charBuffer = _buffer.CharBuffer;
-
-                // TODO:
-                //CharacterSpanBuilder sb = new CharacterSpanBuilder();
-                StringBuilder sb = new StringBuilder();
+                char[] resultBuffer = null;
                 do
                 {
                     readLength = ((stringLength - currPos) > MaxCharsBuffer) ? MaxCharsBuffer : (stringLength - currPos);
@@ -109,6 +106,8 @@ namespace Microsoft.Build
                         {
                             ErrorUtilities.ThrowInternalError("From calculating based on the memorystream, about to read n = {0}. length = {1}, rawPosition = {2}, readLength = {3}, stringLength = {4}, currPos = {5}.", n, length, rawPosition, readLength, stringLength, currPos);
                         }
+
+                        memoryStream.Seek(n, SeekOrigin.Current);
                     }
 
                     if (rawBuffer == null)
@@ -129,21 +128,20 @@ namespace Microsoft.Build
                         throw new EndOfStreamException();
                     }
 
-                    charsRead = _decoder.GetChars(rawBuffer, rawPosition, n, charBuffer, 0);
-
-                    memoryStream?.Seek(readLength, SeekOrigin.Current);
-
                     if (currPos == 0 && n == stringLength)
                     {
+                        charsRead = _decoder.GetChars(rawBuffer, rawPosition, n, charBuffer, 0);
                         return OpportunisticIntern.CharArrayToString(charBuffer, charsRead);
                     }
 
-                    sb.Append(charBuffer, 0, charsRead);
+                    resultBuffer ??= new char[stringLength]; // Actual string length in chars may be smaller.
+                    charsRead += _decoder.GetChars(rawBuffer, rawPosition, n, resultBuffer, charsRead);
+
                     currPos += n;
                 }
                 while (currPos < stringLength);
 
-                return sb.ToString(); //OpportunisticIntern.InternableToString(sb);
+                return OpportunisticIntern.CharArrayToString(resultBuffer, charsRead);
             }
             catch (Exception e)
             {
@@ -186,9 +184,8 @@ namespace Microsoft.Build
             /// </summary>
             internal Buffer()
             {
-                this.Encoding = new UTF8Encoding();
                 this.CharBuffer = new char[MaxCharsBuffer];
-                this.ByteBuffer = new byte[Encoding.GetMaxByteCount(MaxCharsBuffer)];
+                this.ByteBuffer = new byte[Encoding.UTF8.GetMaxByteCount(MaxCharsBuffer)];
             }
 
             /// <summary>
@@ -204,15 +201,6 @@ namespace Microsoft.Build
             /// The byte buffer.
             /// </summary>
             internal byte[] ByteBuffer
-            {
-                get;
-                private set;
-            }
-
-            /// <summary>
-            /// The encoding.
-            /// </summary>
-            internal UTF8Encoding Encoding
             {
                 get;
                 private set;
