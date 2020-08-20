@@ -171,25 +171,25 @@ namespace Microsoft.Build.Shared
 
             // In all other cases we create a new string instance and concatenate all spans into it.
             string result = new string((char)0, Length);
-            int bytesRemaining = sizeof(char) * Length;
+            int charsRemaining = Length;
 
             fixed (char* resultPtr = result)
             {
                 char* destPtr = resultPtr;
                 if (_firstSpan.Length > 0)
                 {
-                    _firstSpan.CopyTo(new Span<char>(destPtr, bytesRemaining));
+                    _firstSpan.CopyTo(new Span<char>(destPtr, charsRemaining));
                     destPtr += _firstSpan.Length;
-                    bytesRemaining -= sizeof(char) * _firstSpan.Length;
+                    charsRemaining -= _firstSpan.Length;
                 }
 
                 if (_additionalSpans != null)
                 {
                     foreach (ReadOnlyMemory<char> span in _additionalSpans)
                     {
-                        span.Span.CopyTo(new Span<char>(destPtr, bytesRemaining));
+                        span.Span.CopyTo(new Span<char>(destPtr, charsRemaining));
                         destPtr += span.Length;
-                        bytesRemaining -= sizeof(char) * span.Length;
+                        charsRemaining -= span.Length;
                     }
                 }
             }
