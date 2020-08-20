@@ -82,7 +82,9 @@ namespace Microsoft.Build
 
                 char[] charBuffer = _buffer.CharBuffer;
 
-                CharacterSpanBuilder sb = new CharacterSpanBuilder();
+                // TODO:
+                //CharacterSpanBuilder sb = new CharacterSpanBuilder();
+                StringBuilder sb = new StringBuilder();
                 do
                 {
                     readLength = ((stringLength - currPos) > MaxCharsBuffer) ? MaxCharsBuffer : (stringLength - currPos);
@@ -141,7 +143,7 @@ namespace Microsoft.Build
                 }
                 while (currPos < stringLength);
 
-                return OpportunisticIntern.InternableToString(sb);
+                return sb.ToString(); //OpportunisticIntern.InternableToString(sb);
             }
             catch (Exception e)
             {
