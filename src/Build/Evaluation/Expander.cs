@@ -594,8 +594,9 @@ namespace Microsoft.Build.Evaluation
         private static void AddArgument(List<string> arguments, ref CharacterSpanBuilder argumentBuilder)
         {
             // we reached the end of an argument, add the builder's final result
-            // to our arguments. 
-            string argValue = OpportunisticIntern.InternableToString(argumentBuilder).Trim();
+            // to our arguments.
+            argumentBuilder.Trim();
+            string argValue = OpportunisticIntern.InternableToString(argumentBuilder);
 
             // We support passing of null through the argument constant value null
             if (String.Equals("null", argValue, StringComparison.OrdinalIgnoreCase))

@@ -199,28 +199,84 @@ namespace Microsoft.Build.Shared
         /// <summary>
         /// Append a string.
         /// </summary>
-        internal CharacterSpanBuilder Append(string value)
+        internal void Append(string value)
         {
             AddSpan(value.AsMemory());
-            return this;
         }
 
         /// <summary>
         /// Append a substring.
         /// </summary>
-        internal CharacterSpanBuilder Append(string value, int startIndex, int count)
+        internal void Append(string value, int startIndex, int count)
         {
             AddSpan(value.AsMemory(startIndex, count));
-            return this;
         }
 
-        internal CharacterSpanBuilder Append(char[] chars, int startIndex, int count)
+        internal void TrimStart()
         {
-            AddSpan(chars.AsMemory(startIndex, count));
-            return this;
+            int oldLength = _firstSpan.Length;
+            _firstSpan = _firstSpan.TrimStart();
+            Length -= (oldLength - _firstSpan.Length);
+
+            if (_firstSpan.IsEmpty && _additionalSpans != null)
+            {
+                for (int spanIdx = 0; spanIdx < _additionalSpans.Count; spanIdx++)
+                {
+                    ReadOnlySpan<char> span = _additionalSpans[spanIdx].Span;
+                    int i = 0;
+                    while (i < span.Length && char.IsWhiteSpace(span[i]))
+                    {
+                        i++;
+                    }
+                    if (i > 0)
+                    {
+                        _additionalSpans[spanIdx] = _additionalSpans[spanIdx].Slice(i);
+                        Length -= i;
+                    }
+                    if (!_additionalSpans[spanIdx].IsEmpty)
+                    {
+                        return;
+                    }
+                }
+            }
         }
 
-        public CharacterSpanBuilder Clear()
+        internal void TrimEnd()
+        {
+            if (_additionalSpans != null)
+            {
+                for (int spanIdx = _additionalSpans.Count - 1; spanIdx >= 0; spanIdx--)
+                {
+                    ReadOnlySpan<char> span = _additionalSpans[spanIdx].Span;
+                    int i = span.Length - 1;
+                    while (i >= 0 && char.IsWhiteSpace(span[i]))
+                    {
+                        i--;
+                    }
+                    if (i + 1 < span.Length)
+                    {
+                        _additionalSpans[spanIdx] = _additionalSpans[spanIdx].Slice(0, i + 1);
+                        Length -= span.Length - (i + 1);
+                    }
+                    if (!_additionalSpans[spanIdx].IsEmpty)
+                    {
+                        return;
+                    }
+                }
+            }
+
+            int oldLength = _firstSpan.Length;
+            _firstSpan = _firstSpan.TrimEnd();
+            Length -= (oldLength - _firstSpan.Length);
+        }
+
+        internal void Trim()
+        {
+            TrimStart();
+            TrimEnd();
+        }
+
+        public void Clear()
         {
             _firstSpan = default(ReadOnlySpan<char>);
             _additionalSpans?.Clear();
@@ -228,7 +284,6 @@ namespace Microsoft.Build.Shared
 #if NETCOREAPP
             _firstString = null;
 #endif
-            return this;
         }
 
         private void AddSpan(ReadOnlyMemory<char> span)
