@@ -644,6 +644,7 @@ namespace Microsoft.Build.Evaluation
             List<string> arguments = new List<string>();
 
             CharacterSpanBuilder argumentBuilder = new CharacterSpanBuilder();
+            int? argumentStartIndex = null;
 
             // Iterate over the contents of the arguments extracting the
             // the individual arguments as we go
@@ -663,6 +664,11 @@ namespace Microsoft.Build.Evaluation
                         ProjectErrorUtilities.ThrowInvalidProject(elementLocation, "InvalidFunctionPropertyExpression", expressionFunction, AssemblyResources.GetString("InvalidFunctionPropertyExpressionDetailMismatchedParenthesis"));
                     }
 
+                    if (argumentStartIndex.HasValue)
+                    {
+                        argumentBuilder.Append(argumentsString, argumentStartIndex.Value, nestedPropertyStart - argumentStartIndex.Value);
+                        argumentStartIndex = null;
+                    }
                     argumentBuilder.Append(argumentsString, nestedPropertyStart, (n - nestedPropertyStart) + 1);
                 }
                 else if (argumentsString[n] == '`' || argumentsString[n] == '"' || argumentsString[n] == '\'')
@@ -677,10 +683,21 @@ namespace Microsoft.Build.Evaluation
                         ProjectErrorUtilities.ThrowInvalidProject(elementLocation, "InvalidFunctionPropertyExpression", expressionFunction, AssemblyResources.GetString("InvalidFunctionPropertyExpressionDetailMismatchedQuote"));
                     }
 
+                    if (argumentStartIndex.HasValue)
+                    {
+                        argumentBuilder.Append(argumentsString, argumentStartIndex.Value, quoteStart - argumentStartIndex.Value);
+                        argumentStartIndex = null;
+                    }
                     argumentBuilder.Append(argumentsString, quoteStart, (n - quoteStart) + 1);
                 }
                 else if (argumentsString[n] == ',')
                 {
+                    if (argumentStartIndex.HasValue)
+                    {
+                        argumentBuilder.Append(argumentsString, argumentStartIndex.Value, n - argumentStartIndex.Value);
+                        argumentStartIndex = null;
+                    }
+
                     // We have reached the end of the current argument, go ahead and add it
                     // to our list
                     AddArgument(arguments, ref argumentBuilder);
@@ -690,8 +707,13 @@ namespace Microsoft.Build.Evaluation
                 }
                 else
                 {
-                    argumentBuilder.Append(argumentsString, n, 1);
+                    argumentStartIndex ??= n;
                 }
+            }
+
+            if (argumentStartIndex.HasValue)
+            {
+                argumentBuilder.Append(argumentsString, argumentStartIndex.Value, argumentsContentLength - argumentStartIndex.Value);
             }
 
             // This will either be the one and only argument, or the last one
