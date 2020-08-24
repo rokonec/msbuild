@@ -44,7 +44,7 @@
     <Compile Include="..\Shared\ExceptionHandling.cs" />
     <Compile Include="..\Shared\VisualStudioLocationHelper.cs" />
     <Compile Include="..\Shared\StringBuilderCache.cs" />
-    <Compile Include="..\Shared\CharacterSpanBuilder.cs" />
+    <Compile Include="..\Shared\InternableString.cs" />
     <Compile Include="..\Shared\WeakStringCache.cs" />
     <Compile Include="..\Shared\WeakStringCache.Concurrent.cs" />
     <Compile Include="..\Shared\OpportunisticIntern.cs" />

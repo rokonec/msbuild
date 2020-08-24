@@ -10,15 +10,15 @@ namespace Microsoft.Build.Shared
     /// <summary>
     /// 
     /// </summary>
-    internal ref struct CharacterSpanBuilder
+    internal ref struct InternableString
     {
         public ref struct Enumerator
         {
-            private readonly CharacterSpanBuilder _spanBuilder;
+            private readonly InternableString _spanBuilder;
             private int _spanIndex;
             private int _charIndex;
 
-            public Enumerator(CharacterSpanBuilder spanBuilder)
+            public Enumerator(InternableString spanBuilder)
             {
                 _spanBuilder = spanBuilder;
                 _spanIndex = -1;
@@ -78,7 +78,7 @@ namespace Microsoft.Build.Shared
 #endif
         /// <summary>
         /// </summary>
-        internal CharacterSpanBuilder(int capacity = 4)
+        internal InternableString(int capacity = 4)
         {
             _firstSpan = default(ReadOnlySpan<char>);
             _additionalSpans = new List<ReadOnlyMemory<char>>(capacity);
@@ -88,7 +88,7 @@ namespace Microsoft.Build.Shared
 #endif
         }
 
-        internal CharacterSpanBuilder(ReadOnlySpan<char> span)
+        internal InternableString(ReadOnlySpan<char> span)
         {
             _firstSpan = span;
             _additionalSpans = null;
@@ -98,7 +98,7 @@ namespace Microsoft.Build.Shared
 #endif
         }
 
-        internal CharacterSpanBuilder(string str)
+        internal InternableString(string str)
         {
             _firstSpan = str.AsSpan();
             _additionalSpans = null;
@@ -144,7 +144,7 @@ namespace Microsoft.Build.Shared
                     index -= span.Length;
                 }
 
-                ErrorUtilities.ThrowInternalError("Inconsistent {0} state", nameof(CharacterSpanBuilder));
+                ErrorUtilities.ThrowInternalError("Inconsistent {0} state", nameof(InternableString));
                 throw new InvalidOperationException();
             }
         }
@@ -184,7 +184,7 @@ namespace Microsoft.Build.Shared
                 }
             }
 
-            ErrorUtilities.ThrowInternalError("Inconsistent {0} state", nameof(CharacterSpanBuilder));
+            ErrorUtilities.ThrowInternalError("Inconsistent {0} state", nameof(InternableString));
             throw new InvalidOperationException();
         }
 

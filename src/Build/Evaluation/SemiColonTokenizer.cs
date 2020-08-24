@@ -146,7 +146,7 @@ namespace Microsoft.Build.Evaluation
                 }
                 if (startIndex < endIndex)
                 {
-                    Shared.CharacterSpanBuilder span = new Shared.CharacterSpanBuilder(_expression.AsSpan(startIndex, endIndex - startIndex));
+                    Shared.InternableString span = new Shared.InternableString(_expression.AsSpan(startIndex, endIndex - startIndex));
                     return OpportunisticIntern.InternableToString(span);
                 }
                 return null;

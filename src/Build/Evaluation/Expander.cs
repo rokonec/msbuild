@@ -591,7 +591,7 @@ namespace Microsoft.Build.Evaluation
         /// Add the argument in the StringBuilder to the arguments list, handling nulls
         /// appropriately
         /// </summary>
-        private static void AddArgument(List<string> arguments, ref CharacterSpanBuilder argumentBuilder)
+        private static void AddArgument(List<string> arguments, ref InternableString argumentBuilder)
         {
             // we reached the end of an argument, add the builder's final result
             // to our arguments.
@@ -643,7 +643,7 @@ namespace Microsoft.Build.Evaluation
 
             List<string> arguments = new List<string>();
 
-            CharacterSpanBuilder argumentBuilder = new CharacterSpanBuilder();
+            InternableString argumentBuilder = new InternableString();
             int? argumentStartIndex = null;
 
             // Iterate over the contents of the arguments extracting the
@@ -786,7 +786,7 @@ namespace Microsoft.Build.Evaluation
                         }
 
                         // otherwise, run the more complex Regex to find item metadata references not contained in transforms
-                        CharacterSpanBuilder finalResultBuilder = new CharacterSpanBuilder();
+                        InternableString finalResultBuilder = new InternableString();
 
                         int start = 0;
                         MetadataMatchEvaluator matchEvaluator = new MetadataMatchEvaluator(metadata, options);
@@ -1164,7 +1164,7 @@ namespace Microsoft.Build.Evaluation
 
                     // Initialize our output string to empty string.
                     // This method is called very often - of the order of 3,000 times per project.
-                    CharacterSpanBuilder result = new CharacterSpanBuilder();
+                    InternableString result = new InternableString();
 
                     // Append our collected results
                     if (results != null)
@@ -1334,7 +1334,7 @@ namespace Microsoft.Build.Evaluation
                         // a semi-colon delimited set of A=B pairs.
                         // Key and Value are converted to string and escaped
                         IDictionary dictionary = valueToConvert as IDictionary;
-                        CharacterSpanBuilder builder = new CharacterSpanBuilder();
+                        InternableString builder = new InternableString();
 
                         foreach (DictionaryEntry entry in dictionary)
                         {
@@ -1355,7 +1355,7 @@ namespace Microsoft.Build.Evaluation
                     {
                         // If the return is enumerable, then we'll convert to semi-colon delimited elements
                         // each of which must be converted, so we'll recurse for each element
-                        CharacterSpanBuilder builder = new CharacterSpanBuilder();
+                        InternableString builder = new InternableString();
 
                         IEnumerable enumerable = (IEnumerable)valueToConvert;
 
@@ -1779,7 +1779,7 @@ namespace Microsoft.Build.Evaluation
                     // a scalar and then create a single item. Basically we need this
                     // to be able to convert item lists with user specified separators into properties.
                     string expandedItemVector;
-                    CharacterSpanBuilder builder = new CharacterSpanBuilder();
+                    InternableString builder = new InternableString();
 
                     brokeEarlyNonEmpty = ExpandExpressionCaptureIntoStringBuilder(expander, expressionCapture, items, elementLocation, ref builder, options);
 
@@ -1960,7 +1960,7 @@ namespace Microsoft.Build.Evaluation
                     return expression;
                 }
 
-                CharacterSpanBuilder builder = new CharacterSpanBuilder();
+                InternableString builder = new InternableString();
                 // As we walk through the matches, we need to copy out the original parts of the string which
                 // are not covered by the match.  This preserves original behavior which did not trim whitespace
                 // from between separators.
@@ -2045,7 +2045,7 @@ namespace Microsoft.Build.Evaluation
                 ExpressionShredder.ItemExpressionCapture capture,
                 IItemProvider<S> evaluatedItems,
                 IElementLocation elementLocation,
-                ref CharacterSpanBuilder builder,
+                ref InternableString builder,
                 ExpanderOptions options
                 )
                 where S : class, IItem

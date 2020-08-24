@@ -25,7 +25,7 @@ namespace Microsoft.Build.UnitTests
             _env = TestEnvironment.Create(testOutput);
         }
 
-        private static bool IsInternable(CharacterSpanBuilder internable)
+        private static bool IsInternable(InternableString internable)
         {
             string i1 = OpportunisticIntern.InternableToString(internable);
             string i2 = OpportunisticIntern.InternableToString(internable);
@@ -33,14 +33,14 @@ namespace Microsoft.Build.UnitTests
             return Object.ReferenceEquals(i1, i2);
         }
 
-        private static void AssertInternable(CharacterSpanBuilder internable)
+        private static void AssertInternable(InternableString internable)
         {
             Assert.True(IsInternable(internable));
         }
 
         private static string AssertInternable(char[] ch, int startIndex, int count)
         {
-            var target = new CharacterSpanBuilder(ch.AsSpan(startIndex, count));
+            var target = new InternableString(ch.AsSpan(startIndex, count));
             AssertInternable(target);
             Assert.Equal(target.Length, count);
 
@@ -52,14 +52,14 @@ namespace Microsoft.Build.UnitTests
             AssertInternable(value.ToCharArray(), 0, value.ToCharArray().Length);
         }
 
-        private static void AssertNotInternable(CharacterSpanBuilder internable)
+        private static void AssertNotInternable(InternableString internable)
         {
             Assert.False(IsInternable(internable));
         }
 
         private static void AssertNotInternable(char[] ch)
         {
-            AssertNotInternable(new CharacterSpanBuilder(ch.AsSpan()));
+            AssertNotInternable(new InternableString(ch.AsSpan()));
         }
 
         protected static void AssertNotInternable(string value)

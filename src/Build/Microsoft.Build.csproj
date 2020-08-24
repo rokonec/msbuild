@@ -355,7 +355,7 @@
     <Compile Include="..\Shared\CollectionHelpers.cs" />
     <Compile Include="Collections\ConvertingEnumerable.cs" />
     <Compile Include="Collections\CopyOnReadEnumerable.cs" />
-    <Compile Include="..\Shared\CharacterSpanBuilder.cs" />
+    <Compile Include="..\Shared\InternableString.cs" />
     <Compile Include="..\Shared\WeakStringCache.cs" />
     <Compile Include="..\Shared\WeakStringCache.Concurrent.cs" />
     <Compile Include="..\Shared\OpportunisticIntern.cs" />

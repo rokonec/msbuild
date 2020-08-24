@@ -128,8 +128,8 @@
     <Compile Include="..\Shared\InprocTrackingNativeMethods.cs">
       <Link>Shared\InprocTrackingNativeMethods.cs</Link>
     </Compile>
-    <Compile Include="..\Shared\CharacterSpanBuilder.cs">
-      <Link>Shared\CharacterSpanBuilder.cs</Link>
+    <Compile Include="..\Shared\InternableString.cs">
+      <Link>Shared\InternableString.cs</Link>
     </Compile>
     <Compile Include="..\Shared\WeakStringCache.cs">
       <Link>Shared\WeakStringCache.cs</Link>

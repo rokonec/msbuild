@@ -23,17 +23,17 @@ namespace Microsoft.Build.Shared
     /// <summary>
     /// 
     /// </summary>
-    internal ref struct CharacterSpanBuilder
+    internal ref struct InternableString
     {
         StringBuilder _builder;
         string _firstString;
 
         public ref struct Enumerator
         {
-            private readonly CharacterSpanBuilder _spanBuilder;
+            private readonly InternableString _spanBuilder;
             private int _charIndex;
 
-            public Enumerator(CharacterSpanBuilder spanBuilder)
+            public Enumerator(InternableString spanBuilder)
             {
                 _spanBuilder = spanBuilder;
                 _charIndex = -1;
@@ -55,13 +55,13 @@ namespace Microsoft.Build.Shared
 
         /// <summary>
         /// </summary>
-        internal CharacterSpanBuilder(int capacity = 4)
+        internal InternableString(int capacity = 4)
         {
             _builder = new StringBuilder(capacity * 128);
             _firstString = null;
         }
 
-        internal CharacterSpanBuilder(string str)
+        internal InternableString(string str)
         {
             _builder = new StringBuilder(str);
             _firstString = str;
@@ -126,7 +126,7 @@ namespace Microsoft.Build.Shared
         /// <summary>
         /// Append a string.
         /// </summary>
-        internal CharacterSpanBuilder Append(string value)
+        internal InternableString Append(string value)
         {
             _builder.Append(value);
             return this;
@@ -135,19 +135,19 @@ namespace Microsoft.Build.Shared
         /// <summary>
         /// Append a substring.
         /// </summary>
-        internal CharacterSpanBuilder Append(string value, int startIndex, int count)
+        internal InternableString Append(string value, int startIndex, int count)
         {
             _builder.Append(value, startIndex, count);
             return this;
         }
 
-        internal CharacterSpanBuilder Append(char[] chars, int startIndex, int count)
+        internal InternableString Append(char[] chars, int startIndex, int count)
         {
             _builder.Append(chars, startIndex, count);
             return this;
         }
 
-        public CharacterSpanBuilder Clear()
+        public InternableString Clear()
         {
             _builder.Length = 0;
             _firstString = null;

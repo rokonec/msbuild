@@ -37,7 +37,7 @@ namespace Microsoft.Build.UnitTests
         {
             // Compose the string with SB so it doesn't get interned by the runtime.
             string testString = new StringBuilder(strPart1).Append(strPart2).ToString();
-            CharacterSpanBuilder testStringTarget = new CharacterSpanBuilder(testString);
+            InternableString testStringTarget = new InternableString(testString);
 
             int hashCode = WeakStringCache.GetInternableHashCode(testStringTarget);
 
@@ -49,7 +49,7 @@ namespace Microsoft.Build.UnitTests
 
             // Verify that the string is really in the cache and the cache returns the interned instance.
             string testStringCopy = new StringBuilder(strPart1).Append(strPart2).ToString();
-            cachedString = _cache.GetOrCreateEntry(new CharacterSpanBuilder(testStringCopy), out cacheHit);
+            cachedString = _cache.GetOrCreateEntry(new InternableString(testStringCopy), out cacheHit);
             cacheHit.ShouldBeTrue();
             cachedString.ShouldBeSameAs(testString);
 
@@ -58,7 +58,7 @@ namespace Microsoft.Build.UnitTests
 
             callbackToRunWithTheStringAlive(cachedString);
 
-            cachedString = _cache.GetOrCreateEntry(new CharacterSpanBuilder(testStringCopy), out cacheHit);
+            cachedString = _cache.GetOrCreateEntry(new InternableString(testStringCopy), out cacheHit);
             cacheHit.ShouldBeTrue();
             cachedString.ShouldBeSameAs(testString);
 
@@ -97,7 +97,7 @@ namespace Microsoft.Build.UnitTests
             // There are no cache hits when iterating over our strings again because the last one always wins and steals the slot.
             for (int i = 0; i < numberOfStrings; i++)
             {
-                string cachedStringFromCache =_cache.GetOrCreateEntry(new CharacterSpanBuilder(String.Copy(cachedStrings[i])), out bool cacheHit);
+                string cachedStringFromCache =_cache.GetOrCreateEntry(new InternableString(String.Copy(cachedStrings[i])), out bool cacheHit);
                 cacheHit.ShouldBeFalse();
                 cachedStringFromCache.ShouldNotBeSameAs(cachedStrings[i]);
             }
