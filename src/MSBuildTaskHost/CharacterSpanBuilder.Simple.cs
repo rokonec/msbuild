@@ -28,6 +28,31 @@ namespace Microsoft.Build.Shared
         StringBuilder _builder;
         string _firstString;
 
+        public ref struct Enumerator
+        {
+            private readonly CharacterSpanBuilder _spanBuilder;
+            private int _charIndex;
+
+            public Enumerator(CharacterSpanBuilder spanBuilder)
+            {
+                _spanBuilder = spanBuilder;
+                _charIndex = -1;
+            }
+
+            public char Current => _spanBuilder[_charIndex];
+
+            public bool MoveNext()
+            {
+                int newIndex = _charIndex + 1;
+                if (newIndex < _spanBuilder.Length)
+                {
+                    _charIndex = newIndex;
+                    return true;
+                }
+                return false;
+            }
+        }
+
         /// <summary>
         /// </summary>
         internal CharacterSpanBuilder(int capacity = 4)
@@ -46,6 +71,11 @@ namespace Microsoft.Build.Shared
         /// The length of the target.
         /// </summary>
         public int Length => _builder.Length;
+
+        public Enumerator GetEnumerator()
+        {
+            return new Enumerator(this);
+        }
 
         /// <summary>
         /// 

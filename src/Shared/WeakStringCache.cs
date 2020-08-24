@@ -104,11 +104,11 @@ namespace Microsoft.Build
         internal static int GetInternableHashCode(CharacterSpanBuilder internable)
         {
             int hashCode = 5381;
-            for (int i = 0; i < internable.Length; i++)
+            foreach (char ch in internable)
             {
                 unchecked
                 {
-                    hashCode = hashCode * 33 ^ internable[i];
+                    hashCode = hashCode * 33 ^ ch;
                 }
             }
             return hashCode;

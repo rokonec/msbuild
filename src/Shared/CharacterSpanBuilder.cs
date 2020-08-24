@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace Microsoft.Build.Shared
@@ -11,6 +12,63 @@ namespace Microsoft.Build.Shared
     /// </summary>
     internal ref struct CharacterSpanBuilder
     {
+        public ref struct Enumerator
+        {
+            private readonly CharacterSpanBuilder _spanBuilder;
+            private int _spanIndex;
+            private int _charIndex;
+
+            public Enumerator(CharacterSpanBuilder spanBuilder)
+            {
+                _spanBuilder = spanBuilder;
+                _spanIndex = -1;
+                _charIndex = -1;
+            }
+
+            public ref readonly char Current
+            {
+                get
+                {
+                    if (_spanIndex == -1)
+                    {
+                        return ref _spanBuilder._firstSpan[_charIndex];
+                    }
+                    ReadOnlyMemory<char> span = _spanBuilder._additionalSpans[_spanIndex];
+                    return ref span.Span[_charIndex];
+                }
+            }
+
+            public bool MoveNext()
+            {
+                int newIndex = _charIndex + 1;
+                if (_spanIndex == -1)
+                {
+                    if (newIndex < _spanBuilder._firstSpan.Length)
+                    {
+                        _charIndex = newIndex;
+                        return true;
+                    }
+                    _spanIndex = 0;
+                    newIndex = 0;
+                }
+
+                if (_spanBuilder._additionalSpans != null)
+                {
+                    while (_spanIndex < _spanBuilder._additionalSpans.Count)
+                    {
+                        if (newIndex < _spanBuilder._additionalSpans[_spanIndex].Length)
+                        {
+                            _charIndex = newIndex;
+                            return true;
+                        }
+                        _spanIndex++;
+                        newIndex = 0;
+                    }
+                }
+                return false;
+            }
+        }
+
         private ReadOnlySpan<char> _firstSpan;
 
         private List<ReadOnlyMemory<char>> _additionalSpans;
@@ -55,8 +113,13 @@ namespace Microsoft.Build.Shared
         /// </summary>
         public int Length { get; private set; }
 
+        public Enumerator GetEnumerator()
+        {
+            return new Enumerator(this);
+        }
+
         /// <summary>
-        /// 
+        /// Note, O(N), use enumeration for O(1)-per-character scan.
         /// </summary>
         /// <param name="index"></param>
         /// <returns></returns>
