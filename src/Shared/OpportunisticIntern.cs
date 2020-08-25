@@ -189,44 +189,7 @@ namespace Microsoft.Build
         /// <summary>
         /// Intern the given internable.
         /// </summary>
-        internal static string InternableToString(InternableString candidate)
-        {
-            return Instance.InternableToStringImpl(candidate);
-        }
-
-        /// <summary>
-        /// Potentially Intern the given char array.
-        /// </summary>
-        internal static string CharArrayToString(char[] candidate, int count)
-        {
-            InternableString span = new InternableString(candidate.AsSpan<char>(0, count));
-            return Instance.InternableToStringImpl(span);
-        }
-
-        /// <summary>
-        /// Potentially Intern the given char array.
-        /// </summary>
-        internal static string CharArrayToString(char[] candidate, int startIndex, int count)
-        {
-            InternableString span = new InternableString(candidate.AsSpan<char>(startIndex, count));
-            return Instance.InternableToStringImpl(span);
-        }
-
-        /// <summary>
-        /// Potentially Intern the given string.
-        /// </summary>
-        /// <param name="candidate">The string to intern.</param>
-        /// <returns>The interned string, or the same string if it could not be interned.</returns>
-        internal static string InternStringIfPossible(string candidate)
-        {
-            InternableString span = new InternableString(candidate);
-            return Instance.InternableToStringImpl(span);
-        }
-
-        /// <summary>
-        /// Intern the given internable.
-        /// </summary>
-        private string InternableToStringImpl(InternableString candidate)
+        internal string InternableToString(InternableString candidate)
         {
             if (candidate.Length == 0)
             {

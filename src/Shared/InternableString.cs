@@ -199,6 +199,16 @@ namespace Microsoft.Build.Shared
         public int Length { get; private set; }
 
         /// <summary>
+        /// A convenience static method to intern a System.String.
+        /// </summary>
+        /// <param name="str">The string to intern.</param>
+        /// <returns>A string identical in contents to <paramref name="str"/>.</returns>
+        public static string Intern(string str)
+        {
+            return new InternableString(str).ToString();
+        }
+
+        /// <summary>
         /// Creates a new enumerator for enumerating characters in this string. Does not allocate.
         /// </summary>
         /// <returns>The enumerator.</returns>
@@ -367,7 +377,7 @@ namespace Microsoft.Build.Shared
         /// </remarks>
         public override unsafe string ToString()
         {
-            return OpportunisticIntern.InternableToString(this);
+            return OpportunisticIntern.Instance.InternableToString(this);
         }
 
         /// <summary>

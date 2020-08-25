@@ -308,7 +308,7 @@ namespace Microsoft.Build.Execution
 
                 if (assemblyFile != null && !Path.IsPathRooted(assemblyFile))
                 {
-                    assemblyFile = OpportunisticIntern.InternStringIfPossible(Path.Combine(directoryOfImportingFile, assemblyFile));
+                    assemblyFile = InternableString.Intern(Path.Combine(directoryOfImportingFile, assemblyFile));
                 }
 
                 if (String.Equals(taskFactory, RegisteredTaskRecord.CodeTaskFactory, StringComparison.OrdinalIgnoreCase) || String.Equals(taskFactory, RegisteredTaskRecord.XamlTaskFactory, StringComparison.OrdinalIgnoreCase))

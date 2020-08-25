@@ -596,7 +596,7 @@ namespace Microsoft.Build.Evaluation
             // we reached the end of an argument, add the builder's final result
             // to our arguments.
             argumentBuilder.Trim();
-            string argValue = OpportunisticIntern.InternableToString(argumentBuilder);
+            string argValue = argumentBuilder.ToString();
 
             // We support passing of null through the argument constant value null
             if (String.Equals("null", argValue, StringComparison.OrdinalIgnoreCase))
@@ -832,7 +832,7 @@ namespace Microsoft.Build.Evaluation
                             finalResultBuilder.Append(replacementResult);
                         }
 
-                        result = OpportunisticIntern.InternableToString(finalResultBuilder);
+                        result = finalResultBuilder.ToString();
                     }
 
                     // Don't create more strings
@@ -1189,7 +1189,7 @@ namespace Microsoft.Build.Evaluation
                         result.Append(expression, sourceIndex, expression.Length - sourceIndex);
                     }
 
-                    return OpportunisticIntern.InternableToString(result);
+                    return result.ToString();
                 }
             }
 
@@ -1349,7 +1349,7 @@ namespace Microsoft.Build.Evaluation
                             builder.Append(EscapingUtilities.Escape(ConvertToString(entry.Value)));
                         }
 
-                        convertedString = OpportunisticIntern.InternableToString(builder);
+                        convertedString = builder.ToString();
                     }
                     else if (valueToConvert is IEnumerable)
                     {
@@ -1370,7 +1370,7 @@ namespace Microsoft.Build.Evaluation
                             builder.Append(EscapingUtilities.Escape(ConvertToString(element)));
                         }
 
-                        convertedString = OpportunisticIntern.InternableToString(builder);
+                        convertedString = builder.ToString();
                     }
                     else
                     {
@@ -1788,7 +1788,7 @@ namespace Microsoft.Build.Evaluation
                         return null;
                     }
 
-                    expandedItemVector = OpportunisticIntern.InternableToString(builder);
+                    expandedItemVector = builder.ToString();
 
                     result = new List<T>(1);
 
@@ -1989,7 +1989,7 @@ namespace Microsoft.Build.Evaluation
 
                 builder.Append(expression, lastStringIndex, expression.Length - lastStringIndex);
 
-                return OpportunisticIntern.InternableToString(builder);
+                return builder.ToString();
             }
 
             /// <summary>

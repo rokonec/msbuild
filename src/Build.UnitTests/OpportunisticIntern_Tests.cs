@@ -27,8 +27,8 @@ namespace Microsoft.Build.UnitTests
 
         private static bool IsInternable(InternableString internable)
         {
-            string i1 = OpportunisticIntern.InternableToString(internable);
-            string i2 = OpportunisticIntern.InternableToString(internable);
+            string i1 = OpportunisticIntern.Instance.InternableToString(internable);
+            string i2 = OpportunisticIntern.Instance.InternableToString(internable);
             Assert.Equal(i1, i2); // No matter what, the same string value should return.
             return Object.ReferenceEquals(i1, i2);
         }

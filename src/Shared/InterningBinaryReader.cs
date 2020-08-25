@@ -131,7 +131,7 @@ namespace Microsoft.Build
                     if (currPos == 0 && n == stringLength)
                     {
                         charsRead = _decoder.GetChars(rawBuffer, rawPosition, n, charBuffer, 0);
-                        return OpportunisticIntern.CharArrayToString(charBuffer, charsRead);
+                        return new InternableString(charBuffer.AsSpan(0, charsRead)).ToString();
                     }
 
                     resultBuffer ??= new char[stringLength]; // Actual string length in chars may be smaller.
@@ -141,7 +141,7 @@ namespace Microsoft.Build
                 }
                 while (currPos < stringLength);
 
-                return OpportunisticIntern.CharArrayToString(resultBuffer, charsRead);
+                return new InternableString(resultBuffer.AsSpan(0, charsRead)).ToString();
             }
             catch (Exception e)
             {

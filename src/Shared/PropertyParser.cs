@@ -146,8 +146,7 @@ namespace Microsoft.Build.Tasks
                             // There was a property definition previous to this one.  Append the current string
                             // to that previous value, using semicolon as a separator.
                             string propertyValue = EscapingUtilities.Escape(propertyNameValueString.Trim());
-                            finalPropertiesList[finalPropertiesList.Count - 1].Value.Append(';');
-                            finalPropertiesList[finalPropertiesList.Count - 1].Value.Append(propertyValue);
+                            finalPropertiesList[finalPropertiesList.Count - 1].Value.Add(propertyValue);
                         }
                         else
                         {
@@ -163,10 +162,22 @@ namespace Microsoft.Build.Tasks
                 // needs to pass onto the engine.
                 log?.LogMessageFromText(parameterName, MessageImportance.Low);
 
+                InternableString internableString = new InternableString();
                 foreach (PropertyNameValuePair propertyNameValuePair in finalPropertiesList)
                 {
-                    // TODO
-                    string propertyValue = OpportunisticIntern.InternStringIfPossible(propertyNameValuePair.Value.ToString());
+                    internableString.Clear();
+                    bool needsSemicolon = false;
+                    foreach (string valueFragment in propertyNameValuePair.Value)
+                    {
+                        if (needsSemicolon)
+                        {
+                            internableString.Append(";");
+                        }
+                        needsSemicolon = true;
+                        internableString.Append(valueFragment);
+                    }
+
+                    string propertyValue = internableString.ToString();
                     finalPropertiesTable[propertyNameValuePair.Name] = propertyValue;
                     log?.LogMessageFromText(
                         $"  {propertyNameValuePair.Name}={propertyValue}",
@@ -188,14 +199,17 @@ namespace Microsoft.Build.Tasks
             internal string Name { get; }
 
             /// <summary>
-            /// Property value
+            /// Property value fragments. Join with semicolon to get the final value.
             /// </summary>
-            internal StringBuilder Value { get; }
+            internal List<string> Value { get; }
 
             internal PropertyNameValuePair(string propertyName, string propertyValue)
             {
                 Name = propertyName;
-                Value = new StringBuilder(propertyValue);
+                Value = new List<string>
+                {
+                    propertyValue
+                };
             }
         }
     }
