@@ -47,7 +47,7 @@ namespace Microsoft.Build
             /// </summary>
             /// <param name="internable">The internable describing the string we're looking for.</param>
             /// <returns>The string matching the internable or null if the handle is referencing a collected string or the string is different.</returns>
-            public string GetString(InternableString internable)
+            public string GetString(ref InternableString internable)
             {
                 if (WeakHandle.IsAllocated && WeakHandle.Target is string str)
                 {
@@ -101,7 +101,7 @@ namespace Microsoft.Build
         /// </summary>
         /// <param name="internable">The internable to compute the hash code for.</param>
         /// <returns>The 32-bit hash code.</returns>
-        internal static int GetInternableHashCode(InternableString internable)
+        internal static int GetInternableHashCode(ref InternableString internable)
         {
             int hashCode = 5381;
             foreach (char ch in internable)

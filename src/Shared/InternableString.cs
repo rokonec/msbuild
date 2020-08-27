@@ -52,7 +52,7 @@ namespace Microsoft.Build.Shared
             /// <summary>
             /// The InternableString being enumerated.
             /// </summary>
-            private readonly InternableString _string;
+            private InternableString _string;
 
             /// <summary>
             /// Index of the current span, -1 represents the inline span.
@@ -64,7 +64,7 @@ namespace Microsoft.Build.Shared
             /// </summary>
             private int _charIndex;
 
-            internal Enumerator(InternableString str)
+            internal Enumerator(ref InternableString str)
             {
                 _string = str;
                 _spanIndex = -1;
@@ -214,7 +214,7 @@ namespace Microsoft.Build.Shared
         /// <returns>The enumerator.</returns>
         public Enumerator GetEnumerator()
         {
-            return new Enumerator(this);
+            return new Enumerator(ref this);
         }
 
         /// <summary>
@@ -377,7 +377,7 @@ namespace Microsoft.Build.Shared
         /// </remarks>
         public override unsafe string ToString()
         {
-            return OpportunisticIntern.Instance.InternableToString(this);
+            return OpportunisticIntern.Instance.InternableToString(ref this);
         }
 
         /// <summary>

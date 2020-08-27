@@ -43,7 +43,7 @@ namespace Microsoft.Build
             /// Converts the given internable candidate to its string representation. Efficient implementions have side-effects
             /// of caching the results to end up with as few duplicates on the managed heap as practical.
             /// </summary>
-            string InterningToString(InternableString candidate);
+            string InterningToString(ref InternableString candidate);
 
             /// <summary>
             /// Prints implementation specific interning statistics to the console.
@@ -189,7 +189,7 @@ namespace Microsoft.Build
         /// <summary>
         /// Intern the given internable.
         /// </summary>
-        internal string InternableToString(InternableString candidate)
+        internal string InternableToString(ref InternableString candidate)
         {
             if (candidate.Length == 0)
             {
@@ -199,13 +199,13 @@ namespace Microsoft.Build
 
             if (_whatIfInfinite != null)
             {
-                _whatIfInfinite.InterningToString(candidate);
-                _whatIfDoubled.InterningToString(candidate);
-                _whatIfHalved.InterningToString(candidate);
-                _whatIfZero.InterningToString(candidate);
+                _whatIfInfinite.InterningToString(ref candidate);
+                _whatIfDoubled.InterningToString(ref candidate);
+                _whatIfHalved.InterningToString(ref candidate);
+                _whatIfZero.InterningToString(ref candidate);
             }
 
-            string result = _interner.InterningToString(candidate);
+            string result = _interner.InterningToString(ref candidate);
 #if DEBUG
             string expected = candidate.ExpensiveConvertToString();
             if (!String.Equals(result, expected))
@@ -233,7 +233,7 @@ namespace Microsoft.Build
             }
         }
 
-        private static bool TryInternHardcodedString(InternableString candidate, string str, ref string interned)
+        private static bool TryInternHardcodedString(ref InternableString candidate, string str, ref string interned)
         {
             Debug.Assert(candidate.Length == str.Length);
 
@@ -252,7 +252,7 @@ namespace Microsoft.Build
         /// <returns>
         /// True if the candidate matched a hardcoded literal, null if it matched a "do not intern" string, false otherwise.
         /// </returns>
-        private static bool? TryMatchHardcodedStrings(InternableString candidate, out string interned)
+        private static bool? TryMatchHardcodedStrings(ref InternableString candidate, out string interned)
         {
             int length = candidate.Length;
             interned = null;
@@ -283,39 +283,39 @@ namespace Microsoft.Build
             }
             else if (length == 4)
             {
-                if (TryInternHardcodedString(candidate, "TRUE", ref interned) ||
-                    TryInternHardcodedString(candidate, "True", ref interned) ||
-                    TryInternHardcodedString(candidate, "Copy", ref interned) ||
-                    TryInternHardcodedString(candidate, "true", ref interned) ||
-                    TryInternHardcodedString(candidate, "v4.0", ref interned))
+                if (TryInternHardcodedString(ref candidate, "TRUE", ref interned) ||
+                    TryInternHardcodedString(ref candidate, "True", ref interned) ||
+                    TryInternHardcodedString(ref candidate, "Copy", ref interned) ||
+                    TryInternHardcodedString(ref candidate, "true", ref interned) ||
+                    TryInternHardcodedString(ref candidate, "v4.0", ref interned))
                 {
                     return true;
                 }
             }
             else if (length == 5)
             {
-                if (TryInternHardcodedString(candidate, "FALSE", ref interned) ||
-                    TryInternHardcodedString(candidate, "false", ref interned) ||
-                    TryInternHardcodedString(candidate, "Debug", ref interned) ||
-                    TryInternHardcodedString(candidate, "Build", ref interned) ||
-                    TryInternHardcodedString(candidate, "Win32", ref interned))
+                if (TryInternHardcodedString(ref candidate, "FALSE", ref interned) ||
+                    TryInternHardcodedString(ref candidate, "false", ref interned) ||
+                    TryInternHardcodedString(ref candidate, "Debug", ref interned) ||
+                    TryInternHardcodedString(ref candidate, "Build", ref interned) ||
+                    TryInternHardcodedString(ref candidate, "Win32", ref interned))
                 {
                     return true;
                 }
             }
             else if (length == 6)
             {
-                if (TryInternHardcodedString(candidate, "''!=''", ref interned) ||
-                    TryInternHardcodedString(candidate, "AnyCPU", ref interned))
+                if (TryInternHardcodedString(ref candidate, "''!=''", ref interned) ||
+                    TryInternHardcodedString(ref candidate, "AnyCPU", ref interned))
                 {
                     return true;
                 }
             }
             else if (length == 7)
             {
-                if (TryInternHardcodedString(candidate, "Library", ref interned) ||
-                    TryInternHardcodedString(candidate, "MSBuild", ref interned) ||
-                    TryInternHardcodedString(candidate, "Release", ref interned))
+                if (TryInternHardcodedString(ref candidate, "Library", ref interned) ||
+                    TryInternHardcodedString(ref candidate, "MSBuild", ref interned) ||
+                    TryInternHardcodedString(ref candidate, "Release", ref interned))
                 {
                     return true;
                 }
@@ -330,7 +330,7 @@ namespace Microsoft.Build
             }
             else if (length == 24)
             {
-                if (TryInternHardcodedString(candidate, "ResolveAssemblyReference", ref interned))
+                if (TryInternHardcodedString(ref candidate, "ResolveAssemblyReference", ref interned))
                 {
                     return true;
                 }
@@ -415,15 +415,15 @@ namespace Microsoft.Build
             /// <summary>
             /// Intern the given internable.
             /// </summary>
-            public string InterningToString(InternableString candidate)
+            public string InterningToString(ref InternableString candidate)
             {
                 if (_gatherStatistics)
                 {
-                    return InternWithStatistics(candidate);
+                    return InternWithStatistics(ref candidate);
                 }
                 else
                 {
-                    TryIntern(candidate, out string result);
+                    TryIntern(ref candidate, out string result);
                     return result;
                 }
             }
@@ -464,28 +464,28 @@ namespace Microsoft.Build
             /// Try to intern the string.
             /// The return value indicates the how the string was interned (if at all).
             /// </summary>
-            private InternResult TryIntern(InternableString candidate, out string interned)
+            private InternResult TryIntern(ref InternableString candidate, out string interned)
             {
                 // First, try the hard coded intern strings.
-                bool? hardcodedMatchResult = TryMatchHardcodedStrings(candidate, out interned);
+                bool? hardcodedMatchResult = TryMatchHardcodedStrings(ref candidate, out interned);
                 if (hardcodedMatchResult != false)
                 {
                     // Either matched a hardcoded string or is explicitly not to be interned.
                     return hardcodedMatchResult.HasValue ? InternResult.MatchedHardcodedString : InternResult.RejectedFromInterning;
                 }
 
-                interned = _weakStringCache.GetOrCreateEntry(candidate, out bool cacheHit);
+                interned = _weakStringCache.GetOrCreateEntry(ref candidate, out bool cacheHit);
                 return cacheHit ? InternResult.FoundInWeakStringCache : InternResult.AddedToWeakStringCache;
             }
 
             /// <summary>
             /// Version of Intern that gathers statistics
             /// </summary>
-            private string InternWithStatistics(InternableString candidate)
+            private string InternWithStatistics(ref InternableString candidate)
             {
                 lock (_missedHardcodedStrings)
                 {
-                    InternResult internResult = TryIntern(candidate, out string result);
+                    InternResult internResult = TryIntern(ref candidate, out string result);
 
                     switch (internResult)
                     {
@@ -688,15 +688,15 @@ namespace Microsoft.Build
             /// <summary>
             /// Intern the given internable.
             /// </summary>
-            public string InterningToString(InternableString candidate)
+            public string InterningToString(ref InternableString candidate)
             {
                 if (_gatherStatistics)
                 {
-                    return InternWithStatistics(candidate);
+                    return InternWithStatistics(ref candidate);
                 }
                 else
                 {
-                    TryIntern(candidate, out string result);
+                    TryIntern(ref candidate, out string result);
                     return result;
                 }
             }
@@ -767,7 +767,7 @@ namespace Microsoft.Build
             /// Return false if it was added to the intern list, but wasn't there already.
             /// Return null if it didn't meet the length criteria for any of the buckets. Interning was rejected
             /// </summary>
-            private bool? TryIntern(InternableString candidate, out string interned)
+            private bool? TryIntern(ref InternableString candidate, out string interned)
             {
                 int length = candidate.Length;
                 interned = null;
@@ -776,7 +776,7 @@ namespace Microsoft.Build
                 // Each of the hard-coded small strings below showed up in a profile run with considerable duplication in memory.
                 if (!_dontTrack)
                 {
-                    bool? hardcodedMatchResult = TryMatchHardcodedStrings(candidate, out interned);
+                    bool? hardcodedMatchResult = TryMatchHardcodedStrings(ref candidate, out interned);
                     if (hardcodedMatchResult != false)
                     {
                         // Either matched a hardcoded string or is explicitly not to be interned.
@@ -829,21 +829,21 @@ namespace Microsoft.Build
                     {
                         lock (_hugeMru)
                         {
-                            return _hugeMru.TryGet(candidate, out interned);
+                            return _hugeMru.TryGet(ref candidate, out interned);
                         }
                     }
                     else if (length >= _largeMruThreshold)
                     {
                         lock (_largeMru)
                         {
-                            return _largeMru.TryGet(candidate, out interned);
+                            return _largeMru.TryGet(ref candidate, out interned);
                         }
                     }
                     else if (length >= _smallMruThreshold)
                     {
                         lock (_smallMru)
                         {
-                            return _smallMru.TryGet(candidate, out interned);
+                            return _smallMru.TryGet(ref candidate, out interned);
                         }
                     }
                 }
@@ -855,12 +855,12 @@ namespace Microsoft.Build
             /// <summary>
             /// Version of Intern that gathers statistics
             /// </summary>
-            private string InternWithStatistics(InternableString candidate)
+            private string InternWithStatistics(ref InternableString candidate)
             {
                 lock (_missedStrings)
                 {
                     _stopwatch.Start();
-                    bool? interned = TryIntern(candidate, out string result);
+                    bool? interned = TryIntern(ref candidate, out string result);
                     _stopwatch.Stop();
 
                     if (interned.HasValue && !interned.Value)
@@ -924,7 +924,7 @@ namespace Microsoft.Build
                 /// Try to get one element from the list. Upon leaving the function 'candidate' will be at the head of the Mru list.
                 /// This function is not thread-safe.
                 /// </summary>
-                internal bool TryGet(InternableString candidate, out string interned)
+                internal bool TryGet(ref InternableString candidate, out string interned)
                 {
                     if (_size == 0)
                     {

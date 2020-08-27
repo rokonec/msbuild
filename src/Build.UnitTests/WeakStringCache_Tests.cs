@@ -39,9 +39,9 @@ namespace Microsoft.Build.UnitTests
             string testString = new StringBuilder(strPart1).Append(strPart2).ToString();
             InternableString testStringTarget = new InternableString(testString);
 
-            int hashCode = WeakStringCache.GetInternableHashCode(testStringTarget);
+            int hashCode = WeakStringCache.GetInternableHashCode(ref testStringTarget);
 
-            string cachedString = _cache.GetOrCreateEntry(testStringTarget, out bool cacheHit);
+            string cachedString = _cache.GetOrCreateEntry(ref testStringTarget, out bool cacheHit);
             cacheHit.ShouldBeFalse();
             cachedString.ShouldBeSameAs(testString);
 
@@ -49,7 +49,8 @@ namespace Microsoft.Build.UnitTests
 
             // Verify that the string is really in the cache and the cache returns the interned instance.
             string testStringCopy = new StringBuilder(strPart1).Append(strPart2).ToString();
-            cachedString = _cache.GetOrCreateEntry(new InternableString(testStringCopy), out cacheHit);
+            InternableString testStringCopyTarget = new InternableString(testStringCopy);
+            cachedString = _cache.GetOrCreateEntry(ref testStringCopyTarget, out cacheHit);
             cacheHit.ShouldBeTrue();
             cachedString.ShouldBeSameAs(testString);
 
@@ -58,7 +59,8 @@ namespace Microsoft.Build.UnitTests
 
             callbackToRunWithTheStringAlive(cachedString);
 
-            cachedString = _cache.GetOrCreateEntry(new InternableString(testStringCopy), out cacheHit);
+            testStringCopyTarget = new InternableString(testStringCopy);
+            cachedString = _cache.GetOrCreateEntry(ref testStringCopyTarget, out cacheHit);
             cacheHit.ShouldBeTrue();
             cachedString.ShouldBeSameAs(testString);
 
@@ -97,7 +99,8 @@ namespace Microsoft.Build.UnitTests
             // There are no cache hits when iterating over our strings again because the last one always wins and steals the slot.
             for (int i = 0; i < numberOfStrings; i++)
             {
-                string cachedStringFromCache =_cache.GetOrCreateEntry(new InternableString(String.Copy(cachedStrings[i])), out bool cacheHit);
+                InternableString stringCopy = new InternableString(String.Copy(cachedStrings[i]));
+                string cachedStringFromCache =_cache.GetOrCreateEntry(ref stringCopy, out bool cacheHit);
                 cacheHit.ShouldBeFalse();
                 cachedStringFromCache.ShouldNotBeSameAs(cachedStrings[i]);
             }

@@ -38,9 +38,9 @@ namespace Microsoft.Build
         /// 2b. If there is an entry but it doesn't match, or there is no entry for the given hash code, we extract the string from
         ///     the internable, set it on the entry, and add the entry (back) in the cache.
         /// </remarks>
-        public string GetOrCreateEntry(InternableString internable, out bool cacheHit)
+        public string GetOrCreateEntry(ref InternableString internable, out bool cacheHit)
         {
-            int hashCode = GetInternableHashCode(internable);
+            int hashCode = GetInternableHashCode(ref internable);
 
             StringWeakHandle handle;
             string result;
@@ -50,7 +50,7 @@ namespace Microsoft.Build
             // the Scavenge method running on another thread could free the handle from underneath us.
             if (_stringsByHashCode.TryRemove(hashCode, out handle))
             {
-                result = handle.GetString(internable);
+                result = handle.GetString(ref internable);
                 if (result != null)
                 {
                     // We have a hit, put the handle back in the cache.

@@ -27,9 +27,9 @@ namespace Microsoft.Build
         /// </summary>
         /// <param name="internable">The internable describing the string we're looking for.</param>
         /// <returns>A string matching the given internable.</returns>
-        public string GetOrCreateEntry(InternableString internable, out bool cacheHit)
+        public string GetOrCreateEntry(ref InternableString internable, out bool cacheHit)
         {
-            int hashCode = GetInternableHashCode(internable);
+            int hashCode = GetInternableHashCode(ref internable);
 
             StringWeakHandle handle;
             string result;
@@ -39,7 +39,7 @@ namespace Microsoft.Build
             {
                 if (_stringsByHashCode.TryGetValue(hashCode, out handle))
                 {
-                    result = handle.GetString(internable);
+                    result = handle.GetString(ref internable);
                     if (result != null)
                     {
                         cacheHit = true;

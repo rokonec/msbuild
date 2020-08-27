@@ -45,14 +45,14 @@ namespace Microsoft.Build.Shared
             /// <summary>
             /// The InternableString being enumerated.
             /// </summary>
-            private readonly InternableString _string;
+            private InternableString _string;
 
             /// <summary>
             /// Index of the current character, -1 if MoveNext has not been called yet.
             /// </summary>
             private int _charIndex;
 
-            public Enumerator(InternableString spanBuilder)
+            public Enumerator(ref InternableString spanBuilder)
             {
                 _string = spanBuilder;
                 _charIndex = -1;
@@ -140,7 +140,7 @@ namespace Microsoft.Build.Shared
         /// <returns>The enumerator.</returns>
         public Enumerator GetEnumerator()
         {
-            return new Enumerator(this);
+            return new Enumerator(ref this);
         }
 
         /// <summary>
@@ -209,7 +209,7 @@ namespace Microsoft.Build.Shared
         /// </remarks>
         public override unsafe string ToString()
         {
-            return OpportunisticIntern.Instance.InternableToString(this);
+            return OpportunisticIntern.Instance.InternableToString(ref this);
         }
 
         /// <summary>

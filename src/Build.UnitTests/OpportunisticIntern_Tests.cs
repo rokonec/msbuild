@@ -25,23 +25,23 @@ namespace Microsoft.Build.UnitTests
             _env = TestEnvironment.Create(testOutput);
         }
 
-        private static bool IsInternable(InternableString internable)
+        private static bool IsInternable(ref InternableString internable)
         {
-            string i1 = OpportunisticIntern.Instance.InternableToString(internable);
-            string i2 = OpportunisticIntern.Instance.InternableToString(internable);
+            string i1 = OpportunisticIntern.Instance.InternableToString(ref internable);
+            string i2 = OpportunisticIntern.Instance.InternableToString(ref internable);
             Assert.Equal(i1, i2); // No matter what, the same string value should return.
             return Object.ReferenceEquals(i1, i2);
         }
 
-        private static void AssertInternable(InternableString internable)
+        private static void AssertInternable(ref InternableString internable)
         {
-            Assert.True(IsInternable(internable));
+            Assert.True(IsInternable(ref internable));
         }
 
         private static string AssertInternable(char[] ch, int startIndex, int count)
         {
             var target = new InternableString(ch.AsSpan(startIndex, count));
-            AssertInternable(target);
+            AssertInternable(ref target);
             Assert.Equal(target.Length, count);
 
             return target.ExpensiveConvertToString();
@@ -54,7 +54,7 @@ namespace Microsoft.Build.UnitTests
 
         private static void AssertNotInternable(InternableString internable)
         {
-            Assert.False(IsInternable(internable));
+            Assert.False(IsInternable(ref internable));
         }
 
         private static void AssertNotInternable(char[] ch)
