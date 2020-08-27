@@ -1324,36 +1324,40 @@ namespace Microsoft.Build.Evaluation
                     {
                         convertedString = (string)valueToConvert;
                     }
-                    else if (valueToConvert is IDictionary)
+                    else if (valueToConvert is IDictionary dictionary)
                     {
                         // If the return type is an IDictionary, then we convert this to
                         // a semi-colon delimited set of A=B pairs.
                         // Key and Value are converted to string and escaped
-                        IDictionary dictionary = valueToConvert as IDictionary;
-                        InternableString builder = new InternableString();
-
-                        foreach (DictionaryEntry entry in dictionary)
+                        if (dictionary.Count > 0)
                         {
-                            if (builder.Length > 0)
+                            InternableString builder = new InternableString(4 * dictionary.Count - 1);
+
+                            foreach (DictionaryEntry entry in dictionary)
                             {
-                                builder.Append(";");
+                                if (builder.Length > 0)
+                                {
+                                    builder.Append(";");
+                                }
+
+                                // convert and escape each key and value in the dictionary entry
+                                builder.Append(EscapingUtilities.Escape(ConvertToString(entry.Key)));
+                                builder.Append("=");
+                                builder.Append(EscapingUtilities.Escape(ConvertToString(entry.Value)));
                             }
 
-                            // convert and escape each key and value in the dictionary entry
-                            builder.Append(EscapingUtilities.Escape(ConvertToString(entry.Key)));
-                            builder.Append("=");
-                            builder.Append(EscapingUtilities.Escape(ConvertToString(entry.Value)));
+                            convertedString = builder.ToString();
                         }
-
-                        convertedString = builder.ToString();
+                        else
+                        {
+                            convertedString = string.Empty;
+                        }
                     }
-                    else if (valueToConvert is IEnumerable)
+                    else if (valueToConvert is IEnumerable enumerable)
                     {
                         // If the return is enumerable, then we'll convert to semi-colon delimited elements
                         // each of which must be converted, so we'll recurse for each element
                         InternableString builder = new InternableString();
-
-                        IEnumerable enumerable = (IEnumerable)valueToConvert;
 
                         foreach (object element in enumerable)
                         {
@@ -1776,7 +1780,7 @@ namespace Microsoft.Build.Evaluation
                     string expandedItemVector;
                     InternableString builder = new InternableString();
 
-                    brokeEarlyNonEmpty = ExpandExpressionCaptureIntoStringBuilder(expander, expressionCapture, items, elementLocation, ref builder, options);
+                    brokeEarlyNonEmpty = ExpandExpressionCaptureIntoInternableString(expander, expressionCapture, items, elementLocation, ref builder, options);
 
                     if (brokeEarlyNonEmpty)
                     {
@@ -1972,7 +1976,7 @@ namespace Microsoft.Build.Evaluation
                         builder.Append(expression, lastStringIndex, matches[i].Index - lastStringIndex);
                     }
 
-                    bool brokeEarlyNonEmpty = ExpandExpressionCaptureIntoStringBuilder(expander, matches[i], items, elementLocation, ref builder, options);
+                    bool brokeEarlyNonEmpty = ExpandExpressionCaptureIntoInternableString(expander, matches[i], items, elementLocation, ref builder, options);
 
                     if (brokeEarlyNonEmpty)
                     {
@@ -2031,11 +2035,11 @@ namespace Microsoft.Build.Evaluation
             }
 
             /// <summary>
-            /// Expand the match provided into a string, and append that to the provided string builder.
+            /// Expand the match provided into a string, and append that to the provided InternableString.
             /// Returns true if ExpanderOptions.BreakOnNotEmpty was passed, expression was going to be non-empty, and so it broke out early.
             /// </summary>
             /// <typeparam name="S">Type of source items</typeparam>
-            private static bool ExpandExpressionCaptureIntoStringBuilder<S>(
+            private static bool ExpandExpressionCaptureIntoInternableString<S>(
                 Expander<P, I> expander,
                 ExpressionShredder.ItemExpressionCapture capture,
                 IItemProvider<S> evaluatedItems,

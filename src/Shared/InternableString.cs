@@ -18,7 +18,7 @@ namespace Microsoft.Build.Shared
     ///    The advantage over first creating the desired System.String and then interning it is that it does away with the ephemeral System.String
     ///    allocation in the case where the string already is in the intern table.
     ///
-    ///    var str = new InternableString("semicolon;delimited", 0, 8);
+    ///    var str = new InternableString("semicolon;delimited".AsSpan(0, 8));
     ///    Console.WriteLine(str.ToString()); // prints "semicolon"
     ///
     ///    Memory characteristics of the above snippet:
@@ -129,7 +129,7 @@ namespace Microsoft.Build.Shared
 
 #if NETCOREAPP
         /// <summary>
-        /// .NET Core does not keep the reference to the containing object in ReadOnlySpan&lt;T&gt;. In particular, it cannot recover
+        /// .NET Core does not keep a reference to the containing object in ReadOnlySpan&lt;T&gt;. In particular, it cannot recover
         /// the string if the span represents one. We have to hold the reference separately to be able to roundtrip
         /// String-&gt;InternableString-&gt;String without allocating a new String.
         /// </summary>
@@ -137,13 +137,13 @@ namespace Microsoft.Build.Shared
 #endif
 
         /// <summary>
-        /// Additional spans held by this struct (following _inlineSpan). May be null.
+        /// Additional spans held by this struct (logically following _inlineSpan). May be null.
         /// </summary>
         private List<ReadOnlyMemory<char>> _spans;
 
         /// <summary>
         /// Constructs a new InternableString wrapping the given ReadOnlySpan&lt;char&gt;. The struct is still mutable and can be
-        /// used as a StringBuilder, although mutations may require a GC allocation.
+        /// used as a StringBuilder, although mutations may require an allocation.
         /// </summary>
         /// <param name="span">The span to wrap.</param>
         /// <remarks>
@@ -202,7 +202,7 @@ namespace Microsoft.Build.Shared
         /// A convenience static method to intern a System.String.
         /// </summary>
         /// <param name="str">The string to intern.</param>
-        /// <returns>A string identical in contents to <paramref name="str"/>.</returns>
+        /// <returns>A string identical in content to <paramref name="str"/>.</returns>
         public static string Intern(string str)
         {
             return new InternableString(str).ToString();

@@ -128,7 +128,7 @@ namespace Microsoft.Build.Shared
         /// A convenience static method to intern a System.String.
         /// </summary>
         /// <param name="str">The string to intern.</param>
-        /// <returns>A string identical in contents to <paramref name="str"/>.</returns>
+        /// <returns>A string identical in content to <paramref name="str"/>.</returns>
         public static string Intern(string str)
         {
             return new InternableString(str).ToString();
