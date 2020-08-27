@@ -530,12 +530,12 @@ namespace Microsoft.Build.BackEnd.Logging
                 {
                     DisplayDeferredProjectStartedEvent(e.BuildEventContext);
                 }
-                if (null != e.Properties)
+                if (e.Properties != null)
                 {
                     WriteProperties(e, e.Properties);
                 }
 
-                if (null != e.Items)
+                if (e.Items != null)
                 {
                     WriteItems(e, e.Items);
                 }
@@ -602,10 +602,8 @@ namespace Microsoft.Build.BackEnd.Logging
                         // In the project finished message the targets which were built and the project which was built
                         // should be shown
                         string targets = startedEvent.TargetNames;
-
-                        string projectName = string.Empty;
-
-                        projectName = startedEvent.ProjectFile ?? string.Empty;
+                        string projectName = startedEvent.ProjectFile ?? string.Empty;
+                        
                         // Show which targets were built as part of this project
                         if (string.IsNullOrEmpty(targets))
                         {
@@ -1103,7 +1101,7 @@ namespace Microsoft.Build.BackEnd.Logging
                        && IsVerbosityAtLeast(LoggerVerbosity.Normal)
                     )
                 {
-                    List<BuildMessageEventArgs> messageList = null;
+                    List<BuildMessageEventArgs> messageList;
                     if (_deferredMessages.ContainsKey(e.BuildEventContext))
                     {
                         messageList = _deferredMessages[e.BuildEventContext];

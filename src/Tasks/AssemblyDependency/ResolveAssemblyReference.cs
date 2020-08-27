@@ -2443,13 +2443,13 @@ namespace Microsoft.Build.Tasks
             AssemblyNameExtension[] result = null;
             if (resolvedReference?.IsPrimary == true && !resolvedReference.IsBadImage)
             {
-                System.Runtime.Versioning.FrameworkName frameworkName = null;
-                string[] scatterFiles = null;
                 try
                 {
                     // in case of P2P that have not build the reference can be resolved but file does not exist on disk. 
                     if (fileExists(resolvedReference.FullPath))
                     {
+                        FrameworkNameVersioning frameworkName;
+                        string[] scatterFiles;
                         getAssemblyMetadata(resolvedReference.FullPath, assemblyMetadataCache, out result, out scatterFiles, out frameworkName);
                     }
                 }
@@ -2753,7 +2753,7 @@ namespace Microsoft.Build.Tasks
                     List<AssemblyNameExtension> conflictVictims = reference.GetConflictVictims();
 
                     // Skip any remapping that has no conflict victims since a redirect will not help.
-                    if (null == conflictVictims || 0 == conflictVictims.Count)
+                    if (conflictVictims == null || 0 == conflictVictims.Count)
                     {
                         continue;
                     }

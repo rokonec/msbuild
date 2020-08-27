@@ -320,7 +320,7 @@ namespace Microsoft.Build.Shared
             }
 
             // A null message is allowed and is to be treated as a blank line.
-            if (null == message)
+            if (message == null)
             {
                 message = String.Empty;
             }
@@ -333,12 +333,12 @@ namespace Microsoft.Build.Shared
 
             for (int i = 0; i < lines.Length; i++)
             {
-                formattedMessage.Append(String.Format(
+                formattedMessage.AppendFormat(
                         CultureInfo.CurrentCulture, finalFormat,
                         threadId, file,
                         lineNumber, columnNumber, category, code,
                         lines[i], endLineNumber, endColumnNumber,
-                        subcategory, projectFile, logOutputProperties));
+                        subcategory, projectFile, logOutputProperties);
 
                 if (i < (lines.Length - 1))
                 {

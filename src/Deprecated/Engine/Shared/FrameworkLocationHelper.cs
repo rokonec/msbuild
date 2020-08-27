@@ -425,27 +425,23 @@ namespace Microsoft.Build.BuildEngine.Shared
             string registryKeyName
         )
         {
-            string keyValueAsString = String.Empty;
-
             Microsoft.Win32.RegistryKey baseKey = Microsoft.Win32.Registry
                 .LocalMachine
                 .OpenSubKey(registryBaseKeyName);
 
-            if (null == baseKey)
+            if (baseKey == null)
             {
                 return null;
             }
 
             object keyValue = baseKey.GetValue(registryKeyName);
 
-            if (null == keyValue)
+            if (keyValue == null)
             {
                 return null;
             }
 
-            keyValueAsString = keyValue.ToString();
-
-            return keyValueAsString;
+            return keyValue.ToString();
         }
 
         /// <summary>

@@ -119,7 +119,7 @@ namespace Microsoft.Build.Evaluation
         {
             get
             {
-                if (null == _configurationSection && !_configurationReadAttempted)
+                if (_configurationSection == null && !_configurationReadAttempted)
                 {
                     try
                     {
@@ -216,9 +216,7 @@ namespace Microsoft.Build.Evaluation
                 return kindToPathsCache;
             }
 
-            kindToPathsCache = ComputeDistinctListOfSearchPaths(propertyCollection);
-
-            return kindToPathsCache;
+            return ComputeDistinctListOfSearchPaths(propertyCollection);
         }
 
         /// <summary>

@@ -426,7 +426,7 @@ namespace Microsoft.Build.BuildEngine
                 // If the toolsVersion is null, we will use the value specified in
                 // the Project element's ToolsVersion attribute, or else the default if that
                 // attribute is not present.
-                if (null != toolsVersion)
+                if (toolsVersion != null)
                 {
                     this.ToolsVersion = toolsVersion;
                 }
@@ -3414,7 +3414,7 @@ namespace Microsoft.Build.BuildEngine
                 recalculateAction = false;
 
                 // Check if there is a dependent target
-                Target currentTarget = null;
+                Target currentTarget;
                 if (buildContext.NameOfBlockingTarget != null)
                 {
                     currentTarget = GetTargetForName(buildContext.NameOfBlockingTarget);
@@ -3477,7 +3477,7 @@ namespace Microsoft.Build.BuildEngine
 
         private void ExecuteNextActionForProjectContext(ProjectBuildState buildContext, bool initialCall)
         {
-            Target nextTarget = null;
+            Target nextTarget;
             if (buildContext.NameOfBlockingTarget != null)
             {
                 // Notify the next target in depends on/on error stack
@@ -3973,7 +3973,7 @@ namespace Microsoft.Build.BuildEngine
                         case XMakeElements.projectExtensions:
                             if (!importedProject)
                             {
-                                ProjectErrorUtilities.VerifyThrowInvalidProject(null == this.projectExtensionsNode, childElement,
+                                ProjectErrorUtilities.VerifyThrowInvalidProject(this.projectExtensionsNode == null, childElement,
                                     "DuplicateProjectExtensions");
                                 this.projectExtensionsNode = childElement;
 
