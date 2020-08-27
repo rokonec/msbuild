@@ -1,9 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
 
 using Microsoft.Build.Shared;
 using Shouldly;
@@ -13,113 +11,45 @@ namespace Microsoft.Build.UnitTests
 {
     public class InternableString_Tests
     {
-        /// <summary>
-        /// Represents an array of string fragments to create the InternableString from.
-        /// </summary>
-        public class TestDatum
+        private InternableString MakeInternableString(InterningTestData.TestDatum datum, bool appendSubStrings = false)
         {
-            public string[] Fragments { get; }
+            bool wrapFirstFragment = datum.Fragments.Length > 0 && datum.Fragments[0] != null;
 
-            public int Length => Enumerable.Sum(Fragments, (string fragment) => fragment?.Length ?? 0);
+            InternableString internableString = wrapFirstFragment
+                ? new InternableString(datum.Fragments[0])
+                : new InternableString();
 
-            public TestDatum(params string[] fragments)
+            for (int i = 1; i < datum.Fragments.Length; i++)
             {
-                Fragments = fragments;
-            }
-
-            public char this[int index]
-            {
-                get
+                if (appendSubStrings)
                 {
-                    foreach (string fragment in Fragments)
-                    {
-                        if (fragment != null)
-                        {
-                            if (index < fragment.Length)
-                            {
-                                return fragment[index];
-                            }
-                            index -= fragment.Length;
-                        }
-                    }
-                    throw new InvalidOperationException();
+                    int index = datum.Fragments[i].Length / 2;
+                    internableString.Append(datum.Fragments[i], 0, index);
+                    internableString.Append(datum.Fragments[i], index, datum.Fragments[i].Length - index);
+                }
+                else
+                {
+                    internableString.Append(datum.Fragments[i]);
                 }
             }
-
-            internal InternableString MakeInternableString(bool appendSubStrings = false)
-            {
-                bool wrapFirstFragment = Fragments.Length > 0 && Fragments[0] != null;
-
-                InternableString internableString = wrapFirstFragment
-                    ? new InternableString(Fragments[0])
-                    : new InternableString();
-
-                for (int i = 1; i < Fragments.Length; i++)
-                {
-                    if (appendSubStrings)
-                    {
-                        int index = Fragments[i].Length / 2;
-                        internableString.Append(Fragments[i], 0, index);
-                        internableString.Append(Fragments[i], index, Fragments[i].Length - index);
-                    }
-                    else
-                    {
-                        internableString.Append(Fragments[i]);
-                    }
-                }
-                return internableString;
-            }
-
-            public override string ToString()
-            {
-                return string.Join(string.Empty, Fragments);
-            }
+            return internableString;
         }
 
-        public static IEnumerable<object[]> TestData
-        {
-            get
-            {
-                yield return new object[] { new TestDatum((string)null) };
-                yield return new object[] { new TestDatum("") };
-                yield return new object[] { new TestDatum("Test") };
-                yield return new object[] { new TestDatum(null, "All") };
-                yield return new object[] { new TestDatum("", "All") };
-                yield return new object[] { new TestDatum("Test", "All", "The", "Things") };
-            }
-        }
+        public static IEnumerable<object[]> TestData => InterningTestData.TestData;
+        public static IEnumerable<object[]> TestDataForTrim => InterningTestData.TestDataForTrim;
 
-        public static IEnumerable<object[]> TestDataForTrim
+        [Theory]
+        [MemberData(nameof(TestData))]
+        public void LengthReturnsLength(InterningTestData.TestDatum datum)
         {
-            get
-            {
-                yield return new object[] { new TestDatum((string)null) };
-                yield return new object[] { new TestDatum(" ") };
-                yield return new object[] { new TestDatum("  ") };
-                yield return new object[] { new TestDatum(null, "") };
-                yield return new object[] { new TestDatum(null, " ") };
-                yield return new object[] { new TestDatum(" T ") };
-                yield return new object[] { new TestDatum("  Test  ") };
-                yield return new object[] { new TestDatum(null, " All ") };
-                yield return new object[] { new TestDatum(null, "  All  ") };
-                yield return new object[] { new TestDatum(" ", "  Test", "", "All  ", " ") };
-                yield return new object[] { new TestDatum("Test", "  ", "", "  ", " ") };
-                yield return new object[] { new TestDatum("Test", "All", "The", "Things") };
-            }
+            MakeInternableString(datum).Length.ShouldBe(datum.Length);
         }
 
         [Theory]
         [MemberData(nameof(TestData))]
-        public void LengthReturnsLength(TestDatum datum)
+        public void EnumeratorEnumeratesCharacters(InterningTestData.TestDatum datum)
         {
-            datum.MakeInternableString().Length.ShouldBe(datum.Length);
-        }
-
-        [Theory]
-        [MemberData(nameof(TestData))]
-        public void EnumeratorEnumeratesCharacters(TestDatum datum)
-        {
-            InternableString internableString = datum.MakeInternableString();
+            InternableString internableString = MakeInternableString(datum);
             int index = 0;
             foreach (char ch in internableString)
             {
@@ -130,9 +60,9 @@ namespace Microsoft.Build.UnitTests
 
         [Theory]
         [MemberData(nameof(TestData))]
-        public void IndexerReturnsCharacters(TestDatum datum)
+        public void IndexerReturnsCharacters(InterningTestData.TestDatum datum)
         {
-            InternableString internableString = datum.MakeInternableString();
+            InternableString internableString = MakeInternableString(datum);
             int length = datum.Length;
             for (int index = 0; index < length; index++)
             {
@@ -142,9 +72,9 @@ namespace Microsoft.Build.UnitTests
 
         [Theory]
         [MemberData(nameof(TestData))]
-        public void StartsWithStringByOrdinalComparisonReturnsExpectedValue(TestDatum datum)
+        public void StartsWithStringByOrdinalComparisonReturnsExpectedValue(InterningTestData.TestDatum datum)
         {
-            InternableString internableString = datum.MakeInternableString();
+            InternableString internableString = MakeInternableString(datum);
             internableString.StartsWithStringByOrdinalComparison(string.Empty).ShouldBeTrue();
 
             string substr = datum.Fragments[0] ?? string.Empty;
@@ -175,50 +105,50 @@ namespace Microsoft.Build.UnitTests
 
         [Theory]
         [MemberData(nameof(TestData))]
-        public void AppendAppendsString(TestDatum datum)
+        public void AppendAppendsString(InterningTestData.TestDatum datum)
         {
-            datum.MakeInternableString(false).ExpensiveConvertToString().ShouldBe(datum.ToString());
+            MakeInternableString(datum, false).ExpensiveConvertToString().ShouldBe(datum.ToString());
         }
 
         [Theory]
         [MemberData(nameof(TestData))]
-        public void AppendAppendsSubstring(TestDatum datum)
+        public void AppendAppendsSubstring(InterningTestData.TestDatum datum)
         {
-            datum.MakeInternableString(true).ExpensiveConvertToString().ShouldBe(datum.ToString());
+            MakeInternableString(datum, true).ExpensiveConvertToString().ShouldBe(datum.ToString());
         }
 
         [Theory]
         [MemberData(nameof(TestDataForTrim))]
-        public void TrimStartRemovesLeadingWhiteSpace(TestDatum datum)
+        public void TrimStartRemovesLeadingWhiteSpace(InterningTestData.TestDatum datum)
         {
-            InternableString internableString = datum.MakeInternableString();
+            InternableString internableString = MakeInternableString(datum);
             internableString.TrimStart();
             internableString.ExpensiveConvertToString().ShouldBe(datum.ToString().TrimStart());
         }
 
         [Theory]
         [MemberData(nameof(TestDataForTrim))]
-        public void TrimEndRemovesTrailingWhiteSpace(TestDatum datum)
+        public void TrimEndRemovesTrailingWhiteSpace(InterningTestData.TestDatum datum)
         {
-            InternableString internableString = datum.MakeInternableString();
+            InternableString internableString = MakeInternableString(datum);
             internableString.TrimEnd();
             internableString.ExpensiveConvertToString().ShouldBe(datum.ToString().TrimEnd());
         }
 
         [Theory]
         [MemberData(nameof(TestDataForTrim))]
-        public void TrimRemovesLeadingAndTrailingWhiteSpace(TestDatum datum)
+        public void TrimRemovesLeadingAndTrailingWhiteSpace(InterningTestData.TestDatum datum)
         {
-            InternableString internableString = datum.MakeInternableString();
+            InternableString internableString = MakeInternableString(datum);
             internableString.Trim();
             internableString.ExpensiveConvertToString().ShouldBe(datum.ToString().Trim());
         }
 
         [Theory]
         [MemberData(nameof(TestData))]
-        public void ClearRemovesAllCharacters(TestDatum datum)
+        public void ClearRemovesAllCharacters(InterningTestData.TestDatum datum)
         {
-            InternableString internableString = datum.MakeInternableString();
+            InternableString internableString = MakeInternableString(datum);
             internableString.Clear();
             internableString.Length.ShouldBe(0);
             internableString.GetEnumerator().MoveNext().ShouldBeFalse();

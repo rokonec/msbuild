@@ -116,6 +116,9 @@
     <Compile Include="..\Shared\UnitTests\TestData\GlobbingTestData.cs">
       <Link>TestData\GlobbingTestData.cs</Link>
     </Compile>
+    <Compile Include="..\Shared\UnitTests\TestData\InterningTestData.cs">
+      <Link>TestData\InterningTestData.cs</Link>
+    </Compile>
     <Compile Include="..\Shared\UnitTests\InternableString_Tests.cs">
       <Link>InternableString_Tests.cs</Link>
     </Compile>
