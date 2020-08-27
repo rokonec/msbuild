@@ -90,6 +90,11 @@ namespace Microsoft.Build.Shared
         private string _firstString;
 
         /// <summary>
+        /// A convenience getter to ensure that we always operate on a non-null string.
+        /// </summary>
+        private string FirstString => _firstString ?? string.Empty;
+
+        /// <summary>
         /// Constructs a new InternableString wrapping the given string. The instance is still mutable and can be used as a StringBuilder,
         /// although that may require an allocation.
         /// </summary>
@@ -117,7 +122,7 @@ namespace Microsoft.Build.Shared
         /// <summary>
         /// Gets the length of the string.
         /// </summary>
-        public int Length => (_builder == null ? _firstString.Length : _builder.Length);
+        public int Length => (_builder == null ? FirstString.Length : _builder.Length);
 
         /// <summary>
         /// A convenience static method to intern a System.String.
@@ -143,7 +148,7 @@ namespace Microsoft.Build.Shared
         /// </summary>
         /// <param name="index">The index to return the character at.</param>
         /// <returns>The character.</returns>
-        public char this[int index] => (_builder == null ? _firstString[index] : _builder[index]);
+        public char this[int index] => (_builder == null ? FirstString[index] : _builder[index]);
 
         /// <summary>
         /// Returns true if the string starts with another string.
@@ -183,7 +188,7 @@ namespace Microsoft.Build.Shared
             {
                 return _firstString;
             }
-            return _builder.ToString();
+            return _builder?.ToString() ?? string.Empty;
         }
 
         /// <summary>
@@ -213,7 +218,7 @@ namespace Microsoft.Build.Shared
         /// <param name="value">The string to append.</param>
         internal void Append(string value)
         {
-            _builder ??= new StringBuilder(_firstString);
+            _builder ??= new StringBuilder(FirstString);
             _firstString = null;
             _builder.Append(value);
         }
@@ -226,7 +231,7 @@ namespace Microsoft.Build.Shared
         /// <param name="count">The length of the substring to append.</param>
         internal void Append(string value, int startIndex, int count)
         {
-            _builder ??= new StringBuilder(_firstString);
+            _builder ??= new StringBuilder(FirstString);
             _firstString = null;
             _builder.Append(value, startIndex, count);
         }
@@ -236,8 +241,11 @@ namespace Microsoft.Build.Shared
         /// </summary>
         public void Clear()
         {
-            _builder.Length = 0;
-            _firstString = null;
+            _firstString = string.Empty;
+            if (_builder != null)
+            {
+                _builder.Length = 0;
+            }
         }
     }
 }
