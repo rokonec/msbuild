@@ -407,7 +407,13 @@ namespace Microsoft.Build.Shared
         {
             int oldLength = _inlineSpan.Length;
             _inlineSpan = _inlineSpan.TrimStart();
-            Length -= (oldLength - _inlineSpan.Length);
+            if (_inlineSpan.Length != oldLength)
+            {
+                Length -= (oldLength - _inlineSpan.Length);
+#if NETCOREAPP
+                _inlineSpanString = null;
+#endif
+            }
 
             if (_inlineSpan.IsEmpty && _spans != null)
             {
@@ -461,7 +467,13 @@ namespace Microsoft.Build.Shared
 
             int oldLength = _inlineSpan.Length;
             _inlineSpan = _inlineSpan.TrimEnd();
-            Length -= (oldLength - _inlineSpan.Length);
+            if (_inlineSpan.Length != oldLength)
+            {
+                Length -= (oldLength - _inlineSpan.Length);
+#if NETCOREAPP
+                _inlineSpanString = null;
+#endif
+            }
         }
 
         /// <summary>
