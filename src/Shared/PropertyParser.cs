@@ -162,7 +162,7 @@ namespace Microsoft.Build.Tasks
                 // needs to pass onto the engine.
                 log?.LogMessageFromText(parameterName, MessageImportance.Low);
 
-                InternableString internableString = new InternableString();
+                using InternableString internableString = new InternableString();
                 foreach (PropertyNameValuePair propertyNameValuePair in finalPropertiesList)
                 {
                     internableString.Clear();

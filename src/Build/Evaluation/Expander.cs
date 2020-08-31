@@ -644,79 +644,86 @@ namespace Microsoft.Build.Evaluation
             InternableString argumentBuilder = new InternableString();
             int? argumentStartIndex = null;
 
-            // Iterate over the contents of the arguments extracting the
-            // the individual arguments as we go
-            for (int n = 0; n < argumentsContentLength; n++)
+            try
             {
-                // We found a property expression.. skip over all of it.
-                if ((n < argumentsContentLength - 1) && (argumentsString[n] == '$' && argumentsString[n + 1] == '('))
+                // Iterate over the contents of the arguments extracting the
+                // the individual arguments as we go
+                for (int n = 0; n < argumentsContentLength; n++)
                 {
-                    int nestedPropertyStart = n;
-                    n += 2; // skip over the opening '$('
-
-                    // Scan for the matching closing bracket, skipping any nested ones
-                    n = ScanForClosingParenthesis(argumentsString, n);
-
-                    if (n == -1)
+                    // We found a property expression.. skip over all of it.
+                    if ((n < argumentsContentLength - 1) && (argumentsString[n] == '$' && argumentsString[n + 1] == '('))
                     {
-                        ProjectErrorUtilities.ThrowInvalidProject(elementLocation, "InvalidFunctionPropertyExpression", expressionFunction, AssemblyResources.GetString("InvalidFunctionPropertyExpressionDetailMismatchedParenthesis"));
-                    }
+                        int nestedPropertyStart = n;
+                        n += 2; // skip over the opening '$('
 
-                    if (argumentStartIndex.HasValue)
-                    {
-                        argumentBuilder.Append(argumentsString, argumentStartIndex.Value, nestedPropertyStart - argumentStartIndex.Value);
-                        argumentStartIndex = null;
+                        // Scan for the matching closing bracket, skipping any nested ones
+                        n = ScanForClosingParenthesis(argumentsString, n);
+
+                        if (n == -1)
+                        {
+                            ProjectErrorUtilities.ThrowInvalidProject(elementLocation, "InvalidFunctionPropertyExpression", expressionFunction, AssemblyResources.GetString("InvalidFunctionPropertyExpressionDetailMismatchedParenthesis"));
+                        }
+
+                        if (argumentStartIndex.HasValue)
+                        {
+                            argumentBuilder.Append(argumentsString, argumentStartIndex.Value, nestedPropertyStart - argumentStartIndex.Value);
+                            argumentStartIndex = null;
+                        }
+                        argumentBuilder.Append(argumentsString, nestedPropertyStart, (n - nestedPropertyStart) + 1);
                     }
-                    argumentBuilder.Append(argumentsString, nestedPropertyStart, (n - nestedPropertyStart) + 1);
+                    else if (argumentsString[n] == '`' || argumentsString[n] == '"' || argumentsString[n] == '\'')
+                    {
+                        int quoteStart = n;
+                        n++; // skip over the opening quote
+
+                        n = ScanForClosingQuote(argumentsString[quoteStart], argumentsString, n);
+
+                        if (n == -1)
+                        {
+                            ProjectErrorUtilities.ThrowInvalidProject(elementLocation, "InvalidFunctionPropertyExpression", expressionFunction, AssemblyResources.GetString("InvalidFunctionPropertyExpressionDetailMismatchedQuote"));
+                        }
+
+                        if (argumentStartIndex.HasValue)
+                        {
+                            argumentBuilder.Append(argumentsString, argumentStartIndex.Value, quoteStart - argumentStartIndex.Value);
+                            argumentStartIndex = null;
+                        }
+                        argumentBuilder.Append(argumentsString, quoteStart, (n - quoteStart) + 1);
+                    }
+                    else if (argumentsString[n] == ',')
+                    {
+                        if (argumentStartIndex.HasValue)
+                        {
+                            argumentBuilder.Append(argumentsString, argumentStartIndex.Value, n - argumentStartIndex.Value);
+                            argumentStartIndex = null;
+                        }
+
+                        // We have reached the end of the current argument, go ahead and add it
+                        // to our list
+                        AddArgument(arguments, ref argumentBuilder);
+
+                        // Clear out the argument builder ready for the next argument
+                        argumentBuilder.Clear();
+                    }
+                    else
+                    {
+                        argumentStartIndex ??= n;
+                    }
                 }
-                else if (argumentsString[n] == '`' || argumentsString[n] == '"' || argumentsString[n] == '\'')
+
+                if (argumentStartIndex.HasValue)
                 {
-                    int quoteStart = n;
-                    n++; // skip over the opening quote
-
-                    n = ScanForClosingQuote(argumentsString[quoteStart], argumentsString, n);
-
-                    if (n == -1)
-                    {
-                        ProjectErrorUtilities.ThrowInvalidProject(elementLocation, "InvalidFunctionPropertyExpression", expressionFunction, AssemblyResources.GetString("InvalidFunctionPropertyExpressionDetailMismatchedQuote"));
-                    }
-
-                    if (argumentStartIndex.HasValue)
-                    {
-                        argumentBuilder.Append(argumentsString, argumentStartIndex.Value, quoteStart - argumentStartIndex.Value);
-                        argumentStartIndex = null;
-                    }
-                    argumentBuilder.Append(argumentsString, quoteStart, (n - quoteStart) + 1);
+                    argumentBuilder.Append(argumentsString, argumentStartIndex.Value, argumentsContentLength - argumentStartIndex.Value);
                 }
-                else if (argumentsString[n] == ',')
-                {
-                    if (argumentStartIndex.HasValue)
-                    {
-                        argumentBuilder.Append(argumentsString, argumentStartIndex.Value, n - argumentStartIndex.Value);
-                        argumentStartIndex = null;
-                    }
 
-                    // We have reached the end of the current argument, go ahead and add it
-                    // to our list
-                    AddArgument(arguments, ref argumentBuilder);
-
-                    // Clear out the argument builder ready for the next argument
-                    argumentBuilder.Clear();
-                }
-                else
-                {
-                    argumentStartIndex ??= n;
-                }
+                // This will either be the one and only argument, or the last one
+                // so add it to our list
+                AddArgument(arguments, ref argumentBuilder);
             }
-
-            if (argumentStartIndex.HasValue)
+            finally
             {
-                argumentBuilder.Append(argumentsString, argumentStartIndex.Value, argumentsContentLength - argumentStartIndex.Value);
+                argumentBuilder.Dispose();
             }
-
-            // This will either be the one and only argument, or the last one
-            // so add it to our list
-            AddArgument(arguments, ref argumentBuilder);
 
             return arguments.ToArray();
         }
@@ -784,7 +791,7 @@ namespace Microsoft.Build.Evaluation
                         }
 
                         // otherwise, run the more complex Regex to find item metadata references not contained in transforms
-                        InternableString finalResultBuilder = new InternableString();
+                        using InternableString finalResultBuilder = new InternableString();
 
                         int start = 0;
                         MetadataMatchEvaluator matchEvaluator = new MetadataMatchEvaluator(metadata, options);
@@ -1160,7 +1167,7 @@ namespace Microsoft.Build.Evaluation
 
                     // Initialize our output string to empty string.
                     // This method is called very often - of the order of 3,000 times per project.
-                    InternableString result = new InternableString();
+                    using InternableString result = new InternableString();
 
                     // Append our collected results
                     if (results != null)
@@ -1331,7 +1338,7 @@ namespace Microsoft.Build.Evaluation
                         // Key and Value are converted to string and escaped
                         if (dictionary.Count > 0)
                         {
-                            InternableString builder = new InternableString(4 * dictionary.Count - 1);
+                            using InternableString builder = new InternableString(4 * dictionary.Count - 1);
 
                             foreach (DictionaryEntry entry in dictionary)
                             {
@@ -1357,7 +1364,7 @@ namespace Microsoft.Build.Evaluation
                     {
                         // If the return is enumerable, then we'll convert to semi-colon delimited elements
                         // each of which must be converted, so we'll recurse for each element
-                        InternableString builder = new InternableString();
+                        using InternableString builder = new InternableString();
 
                         foreach (object element in enumerable)
                         {
@@ -1779,15 +1786,21 @@ namespace Microsoft.Build.Evaluation
                     // to be able to convert item lists with user specified separators into properties.
                     string expandedItemVector;
                     InternableString builder = new InternableString();
-
-                    brokeEarlyNonEmpty = ExpandExpressionCaptureIntoInternableString(expander, expressionCapture, items, elementLocation, ref builder, options);
-
-                    if (brokeEarlyNonEmpty)
+                    try
                     {
-                        return null;
-                    }
+                        brokeEarlyNonEmpty = ExpandExpressionCaptureIntoInternableString(expander, expressionCapture, items, elementLocation, ref builder, options);
 
-                    expandedItemVector = builder.ToString();
+                        if (brokeEarlyNonEmpty)
+                        {
+                            return null;
+                        }
+
+                        expandedItemVector = builder.ToString();
+                    }
+                    finally
+                    {
+                        builder.Dispose();
+                    }
 
                     result = new List<T>(1);
 
@@ -1960,35 +1973,42 @@ namespace Microsoft.Build.Evaluation
                 }
 
                 InternableString builder = new InternableString();
-                // As we walk through the matches, we need to copy out the original parts of the string which
-                // are not covered by the match.  This preserves original behavior which did not trim whitespace
-                // from between separators.
-                int lastStringIndex = 0;
-                for (int i = 0; i < matches.Count; i++)
+                try
                 {
-                    if (matches[i].Index > lastStringIndex)
+                    // As we walk through the matches, we need to copy out the original parts of the string which
+                    // are not covered by the match.  This preserves original behavior which did not trim whitespace
+                    // from between separators.
+                    int lastStringIndex = 0;
+                    for (int i = 0; i < matches.Count; i++)
                     {
-                        if ((options & ExpanderOptions.BreakOnNotEmpty) != 0)
+                        if (matches[i].Index > lastStringIndex)
+                        {
+                            if ((options & ExpanderOptions.BreakOnNotEmpty) != 0)
+                            {
+                                return null;
+                            }
+
+                            builder.Append(expression, lastStringIndex, matches[i].Index - lastStringIndex);
+                        }
+
+                        bool brokeEarlyNonEmpty = ExpandExpressionCaptureIntoInternableString(expander, matches[i], items, elementLocation, ref builder, options);
+
+                        if (brokeEarlyNonEmpty)
                         {
                             return null;
                         }
 
-                        builder.Append(expression, lastStringIndex, matches[i].Index - lastStringIndex);
+                        lastStringIndex = matches[i].Index + matches[i].Length;
                     }
 
-                    bool brokeEarlyNonEmpty = ExpandExpressionCaptureIntoInternableString(expander, matches[i], items, elementLocation, ref builder, options);
+                    builder.Append(expression, lastStringIndex, expression.Length - lastStringIndex);
 
-                    if (brokeEarlyNonEmpty)
-                    {
-                        return null;
-                    }
-
-                    lastStringIndex = matches[i].Index + matches[i].Length;
+                    return builder.ToString();
                 }
-
-                builder.Append(expression, lastStringIndex, expression.Length - lastStringIndex);
-
-                return builder.ToString();
+                finally
+                {
+                    builder.Dispose();
+                }
             }
 
             /// <summary>

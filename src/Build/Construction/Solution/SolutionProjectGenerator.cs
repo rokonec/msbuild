@@ -1097,7 +1097,7 @@ namespace Microsoft.Build.Construction
         /// </summary>
         private static string GetPropertiesAttributeForDirectMSBuildTask(ProjectConfigurationInSolution projectConfiguration)
         {
-            InternableString directProjectProperties = new InternableString(GetConfigurationAndPlatformPropertiesString(projectConfiguration));
+            using InternableString directProjectProperties = new InternableString(GetConfigurationAndPlatformPropertiesString(projectConfiguration));
             directProjectProperties.Append(";");
             directProjectProperties.Append(SolutionProperties);
             return directProjectProperties.ToString();
@@ -1345,11 +1345,14 @@ namespace Microsoft.Build.Construction
         /// </summary>
         private void AddMetaprojectBuildTask(ProjectInSolution project, ProjectTargetInstance target, string targetToBuild, string outputItem)
         {
-            InternableString condition = new InternableString("'%(ProjectReference.Identity)' == '");
-            condition.Append(GetMetaprojectName(project));
-            condition.Append("'");
+            ProjectTaskInstance task;
+            using (InternableString condition = new InternableString("'%(ProjectReference.Identity)' == '"))
+            {
+                condition.Append(GetMetaprojectName(project));
+                condition.Append("'");
 
-            ProjectTaskInstance task = target.AddTask("MSBuild", condition.ToString(), String.Empty);
+                task = target.AddTask("MSBuild", condition.ToString(), String.Empty);
+            }
             task.SetParameter("Projects", "@(ProjectReference)");
 
             if (targetToBuild != null)

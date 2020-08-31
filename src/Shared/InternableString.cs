@@ -3,6 +3,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Resources;
+using System.Text;
+using Microsoft.Extensions.ObjectPool;
 
 namespace Microsoft.Build.Shared
 {
@@ -123,6 +126,46 @@ namespace Microsoft.Build.Shared
         }
 
         /// <summary>
+        /// IPooledObjectPolicy used by <cref="s_arrayListPool"/>.
+        /// </summary>
+        private class PooledObjectPolicy : IPooledObjectPolicy<List<ReadOnlyMemory<char>>>
+        {
+            /// <summary>
+            /// No need to retain excessively long list forever.
+            /// </summary>
+            private const int MAX_RETAINED_LIST_CAPACITY = 1000;
+
+            /// <summary>
+            /// Creates a new list with the default capacity.
+            /// </summary>
+            public List<ReadOnlyMemory<char>> Create()
+            {
+                return new List<ReadOnlyMemory<char>>();
+            }
+
+            /// <summary>
+            /// Returns a list to the pool unless it's excessively long.
+            /// </summary>
+            public bool Return(List<ReadOnlyMemory<char>> obj)
+            {
+                if (obj.Capacity <= MAX_RETAINED_LIST_CAPACITY)
+                {
+                    obj.Clear();
+                    return true;
+                }
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// A pool of lists as we don't want to be allocating a new one every time an InternableString is created / appended to. Since
+        /// InternableString instances must live on the stack, there is rarely more than one used by a given thread. Thus using the number
+        /// of CPUs should be a reasonable heuristic.
+        /// </summary>
+        private static DefaultObjectPool<List<ReadOnlyMemory<char>>> s_arrayListPool =
+            new DefaultObjectPool<List<ReadOnlyMemory<char>>>(new PooledObjectPolicy(), Environment.ProcessorCount);
+
+        /// <summary>
         /// The first span held by this struct, inline to be able to represent ReadOnlySpan&lt;char&gt;. May be empty.
         /// </summary>
         private ReadOnlySpan<char> _inlineSpan;
@@ -186,7 +229,11 @@ namespace Microsoft.Build.Shared
         public InternableString(int capacity = 4)
         {
             _inlineSpan = default(ReadOnlySpan<char>);
-            _spans = new List<ReadOnlyMemory<char>>(capacity);
+            _spans = s_arrayListPool.Get();
+            if (_spans.Capacity < capacity)
+            {
+                _spans.Capacity = capacity;
+            }
             Length = 0;
 #if NETCOREAPP
             _inlineSpanString = null;
@@ -381,6 +428,25 @@ namespace Microsoft.Build.Shared
         }
 
         /// <summary>
+        /// Releases this instance.
+        /// </summary>
+        public void Dispose()
+        {
+            _inlineSpan = default(ReadOnlySpan<char>);
+            if (_spans != null)
+            {
+                s_arrayListPool.Return(_spans);
+                _spans = null;
+            }
+            Length = 0;
+#if NETCOREAPP
+            _inlineSpanString = null;
+#endif
+        }
+
+        #region Mutating public methods
+
+        /// <summary>
         /// Appends a string.
         /// </summary>
         /// <param name="value">The string to append.</param>
@@ -498,13 +564,15 @@ namespace Microsoft.Build.Shared
 #endif
         }
 
+        #endregion
+
         /// <summary>
         /// Appends a ReadOnlyMemory&lt;char&gt; span to the string.
         /// </summary>
         /// <param name="span"></param>
         private void AddSpan(ReadOnlyMemory<char> span)
         {
-            _spans ??= new List<ReadOnlyMemory<char>>();
+            _spans ??= s_arrayListPool.Get();
             _spans.Add(span);
             Length += span.Length;
         }
