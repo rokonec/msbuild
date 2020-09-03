@@ -1,0 +1,45 @@
+﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <TargetFrameworks>$(FullFrameworkTFM)</TargetFrameworks>
+    <PlatformTarget>$(RuntimeOutputPlatformTarget)</PlatformTarget>
+    
+    <IsPackable>false</IsPackable>
+
+    <AssemblyName>StringTools.net35.UnitTests</AssemblyName>
+    <IsTestProject>true</IsTestProject>
+    <IsLibraryTestProject>true</IsLibraryTestProject>
+    <DefineConstants>$(DefineConstants);NET35_UNITTEST</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Shouldly" />
+    <PackageReference Include="xunit.core" />
+    <PackageReference Include="xunit.assert" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\StringTools\StringTools.csproj" Aliases="StringToolsNet35">
+      <SetTargetFramework>TargetFramework=net35</SetTargetFramework>
+    </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Shared\FxCopExclusions\Microsoft.Build.Shared.Suppressions.cs">
+      <ExcludeFromStyleCop>true</ExcludeFromStyleCop>
+    </Compile>
+
+    <Compile Remove="InternableString_Tests.cs" />
+
+    <None Include="..\Shared\UnitTests\App.config">
+      <Link>App.config</Link>
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="..\Shared\UnitTests\xunit.runner.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+</Project>
