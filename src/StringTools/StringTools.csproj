@@ -1,8 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
-    <TargetFrameworks>$(RuntimeOutputTargetFrameworks);net35</TargetFrameworks>
-    <!--TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netstandard2.0</TargetFrameworks-->
+    <TargetFrameworks>$(RuntimeOutputTargetFrameworks)</TargetFrameworks>
+    <TargetFrameworks Condition="'$(MSBuildRuntimeType)' != 'Core' and '$(MonoBuild)' != 'true'">$(RuntimeOutputTargetFrameworks);net35</TargetFrameworks>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <WarningsAsErrors>true</WarningsAsErrors>
     <IsPackable>true</IsPackable>
@@ -15,6 +14,9 @@
     <PackageReference Include="Microsoft.Extensions.ObjectPool" />
     <PackageReference Include="System.Memory" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="jnm2.ReferenceAssemblies.net35" />
+  </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net35'">
     <Compile Remove="InternableString.cs" />
@@ -24,8 +26,4 @@
     <Compile Remove="InternableString.Simple.cs" />
     <Compile Remove="WeakStringCache.Locking.cs" />
   </ItemGroup>
-
-    <Target Name="DisplayMessages" BeforeTargets="Build">
-        <Message Text="TargetFramework = $(TargetFramework)" />
-    </Target>
 </Project>
