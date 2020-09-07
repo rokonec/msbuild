@@ -8,6 +8,8 @@ using System.Text.RegularExpressions;
 using Microsoft.Build.Collections;
 using Microsoft.Build.Shared;
 
+using StringTools;
+
 namespace Microsoft.Build.Globbing
 {
     /// <summary>

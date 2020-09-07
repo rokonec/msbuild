@@ -5,6 +5,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
+using StringTools;
+
 namespace Microsoft.Build.Evaluation
 {
     /// <summary>
@@ -146,7 +148,7 @@ namespace Microsoft.Build.Evaluation
                 }
                 if (startIndex < endIndex)
                 {
-                    Shared.InternableString span = new Shared.InternableString(_expression.AsSpan(startIndex, endIndex - startIndex));
+                    InternableString span = new InternableString(_expression.AsSpan(startIndex, endIndex - startIndex));
                     return span.ToString();
                 }
                 return null;

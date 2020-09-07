@@ -10,6 +10,7 @@ using System.Globalization;
 
 using ErrorUtilities = Microsoft.Build.Shared.ErrorUtilities;
 using Microsoft.Build.Shared;
+using StringTools;
 
 namespace Microsoft.Build
 {

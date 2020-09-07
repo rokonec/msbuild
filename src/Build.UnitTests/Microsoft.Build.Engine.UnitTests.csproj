@@ -119,12 +119,6 @@
     <Compile Include="..\Shared\UnitTests\TestData\InterningTestData.cs">
       <Link>TestData\InterningTestData.cs</Link>
     </Compile>
-    <Compile Include="..\Shared\UnitTests\InternableString_Tests.cs">
-      <Link>InternableString_Tests.cs</Link>
-    </Compile>
-    <Compile Include="..\Shared\UnitTests\InternableString.Simple_Tests.cs" Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework' and '$(MSBuildRuntimeType)' == 'Full' and '$(MonoBuild)' != 'true'">
-      <Link>InternableString.Simple_Tests.cs</Link>
-    </Compile>
     <Compile Include="..\Shared\UnitTests\ImmutableDictionary_Tests.cs" Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework' and '$(MSBuildRuntimeType)' == 'Full' and '$(MonoBuild)' != 'true'">
       <Link>ImmutableDictionary_Tests.cs</Link>
     </Compile>

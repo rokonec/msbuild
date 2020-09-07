@@ -12,6 +12,8 @@ using System.Linq;
 using System.Text;
 using System.Xml;
 
+using StringTools;
+
 using Microsoft.Build.BackEnd.SdkResolution;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Shared;

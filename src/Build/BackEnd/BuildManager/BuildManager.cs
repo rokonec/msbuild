@@ -405,7 +405,7 @@ namespace Microsoft.Build.Execution
 
                 if (BuildParameters.DumpOpportunisticInternStats)
                 {
-                    OpportunisticIntern.Instance.EnableStatisticsGathering();
+                    StringTools.StringTools.EnableDiagnostics();
                 }
 
                 _overallBuildSuccess = true;
@@ -820,7 +820,7 @@ namespace Microsoft.Build.Execution
 
                     if (BuildParameters.DumpOpportunisticInternStats)
                     {
-                        OpportunisticIntern.Instance.ReportStatistics();
+                        Console.WriteLine(StringTools.StringTools.CreateDiagnosticReport());
                     }
                 }
             }

@@ -13,6 +13,8 @@ using Microsoft.Build.Evaluation;
 using Microsoft.Build.Construction;
 using Microsoft.Build.BackEnd;
 
+using StringTools;
+
 using ILoggingService = Microsoft.Build.BackEnd.Logging.ILoggingService;
 using InvalidProjectFileException = Microsoft.Build.Exceptions.InvalidProjectFileException;
 using TaskEngineAssemblyResolver = Microsoft.Build.BackEnd.Logging.TaskEngineAssemblyResolver;

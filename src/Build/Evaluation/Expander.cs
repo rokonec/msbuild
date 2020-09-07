@@ -27,6 +27,8 @@ using ReservedPropertyNames = Microsoft.Build.Internal.ReservedPropertyNames;
 using TaskItem = Microsoft.Build.Execution.ProjectItemInstance.TaskItem;
 using TaskItemFactory = Microsoft.Build.Execution.ProjectItemInstance.TaskItem.TaskItemFactory;
 
+using StringTools;
+
 namespace Microsoft.Build.Evaluation
 {
     /// <summary>

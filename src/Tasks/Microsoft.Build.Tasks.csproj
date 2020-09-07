@@ -81,17 +81,8 @@
     <Compile Include="..\Shared\NGen.cs">
       <Link>NGen.cs</Link>
     </Compile>
-    <Compile Include="..\Shared\InternableString.cs">
-      <Link>InternableString.cs</Link>
-    </Compile>
-    <Compile Include="..\Shared\WeakStringCache.cs">
-      <Link>WeakStringCache.cs</Link>
-    </Compile>
-    <Compile Include="..\Shared\WeakStringCache.Concurrent.cs">
-      <Link>WeakStringCache.Concurrent.cs</Link>
-    </Compile>
-    <Compile Include="..\Shared\OpportunisticIntern.cs">
-      <Link>OpportunisticIntern.cs</Link>
+    <Compile Include="..\Shared\StringToolsHost.cs">
+      <Link>StringToolsHost.cs</Link>
     </Compile>
     <Compile Include="..\Shared\PropertyParser.cs">
       <Link>PropertyParser.cs</Link>
@@ -990,6 +981,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Framework\Microsoft.Build.Framework.csproj" />
     <ProjectReference Include="..\Utilities\Microsoft.Build.Utilities.csproj" />
+    <ProjectReference Include="..\StringTools\StringTools.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="System.Collections.Immutable" />

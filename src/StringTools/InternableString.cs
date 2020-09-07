@@ -346,7 +346,7 @@ namespace StringTools
         /// System.String in which case the original string is returned.
         /// </summary>
         /// <returns>The string.</returns>
-        internal unsafe string ExpensiveConvertToString()
+        public unsafe string ExpensiveConvertToString()
         {
             if (Length == 0)
             {

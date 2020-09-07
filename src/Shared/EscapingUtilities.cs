@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 
+using StringTools;
+
 namespace Microsoft.Build.Shared
 {
     /// <summary>

@@ -516,6 +516,8 @@ namespace Microsoft.Build.CommandLine
             AppDomain.CurrentDomain.UnhandledException += ExceptionHandling.UnhandledExceptionHandler;
 #endif
 
+            StringToolsHost.Initialize();
+
             ExitType exitType = ExitType.Success;
 
             ConsoleCancelEventHandler cancelHandler = Console_CancelKeyPress;

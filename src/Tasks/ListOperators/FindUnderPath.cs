@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Shared;
 
+using StringTools;
+
 namespace Microsoft.Build.Tasks
 {
     /// <summary>
