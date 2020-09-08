@@ -12,6 +12,9 @@
     <VersionPrefix>1.0.0</VersionPrefix>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <PreReleaseVersionLabel>preview</PreReleaseVersionLabel>
+
+    <AssemblyName>StringTools</AssemblyName>
+    <AssemblyName Condition="'$(TargetFramework)' == 'net35'">StringTools.net35</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' != 'net35'">
