@@ -104,7 +104,6 @@ namespace StringTools.Tests
 
             report.ShouldNotContain(statisticsNotEnabledString);
             report.ShouldContain("Eliminated Strings");
-            report.ShouldContain("")
         }
     }
 }
