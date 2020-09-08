@@ -123,6 +123,7 @@ namespace StringTools.Tests
         /// https://www.mono-project.com/docs/advanced/garbage-collector/sgen/#precise-stack-marking
         /// </remarks>
         [Fact]
+        [Trait("Category", "mono-osx-failing")]
         public void RetainsStringUntilCollected()
         {
             // Add a string to the cache using a non-inlinable method to make sure it's not reachable from a GC root.
