@@ -1,7 +1,9 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System.Data;
 using System.Linq;
+using System.Text;
 
 namespace StringTools
 {
@@ -22,19 +24,23 @@ namespace StringTools
 
         public static void EnableDiagnostics()
         {
-            //
+            OpportunisticIntern.Instance.EnableStatisticsGathering();
         }
 
         public static string CreateDiagnosticReport()
         {
-            return string.Empty;
+            StringBuilder callbackReport = new StringBuilder();
+            callbackReport.AppendFormat("{0} with {1} string interning callbacks registered", nameof(StringTools), s_internStringCallbacks.Length);
+            callbackReport.AppendLine();
+
+            return callbackReport.ToString() + OpportunisticIntern.Instance.FormatStatistics();
         }
 
         public static void RegisterStringInterningCallback(TryInternStringDelegate callback)
         {
             lock (s_locker)
             {
-                if (s_internStringCallbacks.Any(existingCallback => existingCallback == callback))
+                if (!s_internStringCallbacks.Any(existingCallback => existingCallback == callback))
                 {
                     TryInternStringDelegate[] newInternStringCallback = new TryInternStringDelegate[s_internStringCallbacks.Length + 1];
                     s_internStringCallbacks.CopyTo(newInternStringCallback, 0);
@@ -49,7 +55,7 @@ namespace StringTools
         {
             lock (s_locker)
             {
-                s_internStringCallbacks = s_internStringCallbacks.Where(existingCallback => existingCallback == callback).ToArray();
+                s_internStringCallbacks = s_internStringCallbacks.Where(existingCallback => existingCallback != callback).ToArray();
             }
         }
 
@@ -65,6 +71,11 @@ namespace StringTools
             }
             interned = null;
             return false;
+        }
+
+        internal static void ResetForTests()
+        {
+            s_internStringCallbacks = new TryInternStringDelegate[0];
         }
     }
 }

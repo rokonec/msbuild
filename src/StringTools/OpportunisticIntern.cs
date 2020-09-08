@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Text;
 
 namespace StringTools
 {
@@ -68,11 +70,11 @@ namespace StringTools
         }
 
         /// <summary>
-        /// Report statistics about interning. Don't call unless GatherStatistics has been called beforehand.
+        /// Returns a string with human-readable statistics. Make sure to call <see cref="EnableStatisticsGathering"/> beforehand.
         /// </summary>
-        internal void ReportStatistics()
+        internal string FormatStatistics()
         {
-            _interner.ReportStatistics("Main");
+            return _interner.FormatStatistics();
         }
 
         /// <summary>
@@ -166,35 +168,48 @@ namespace StringTools
             }
 
             /// <summary>
-            /// Report statistics to the console.
+            /// Returns a string with human-readable statistics.
             /// </summary>
-            public void ReportStatistics(string heading)
+            public string FormatStatistics()
             {
-                string title = "Opportunistic Intern (" + heading + ")";
-                Console.WriteLine("\n{0}{1}{0}", new string('=', 41 - (title.Length / 2)), title);
-                Console.WriteLine("||{0,50}|{1,20:N0}|{2,8}|", "Hardcoded Hits", _hardcodedInternHits, "hits");
-                Console.WriteLine("||{0,50}|{1,20:N0}|{2,8}|", "Hardcoded Rejects", _rejectedStrings, "rejects");
-                Console.WriteLine("||{0,50}|{1,20:N0}|{2,8}|", "WeakStringCache Hits", _regularInternHits, "hits");
-                Console.WriteLine("||{0,50}|{1,20:N0}|{2,8}|", "WeakStringCache Misses", _regularInternMisses, "misses");
-                Console.WriteLine("||{0,50}|{1,20:N0}|{2,8}|", "Eliminated Strings*", _internEliminatedStrings, "strings");
-                Console.WriteLine("||{0,50}|{1,20:N0}|{2,8}|", "Eliminated Chars", _internEliminatedChars, "chars");
-                Console.WriteLine("||{0,50}|{1,20:N0}|{2,8}|", "Estimated Eliminated Bytes", _internEliminatedChars * 2, "bytes");
-                Console.WriteLine("Elimination assumes that strings provided were unique objects.");
-                Console.WriteLine("|---------------------------------------------------------------------------------|");
+                StringBuilder result = new StringBuilder(1024);
 
-                IEnumerable<string> topMissingHardcodedString =
-                    _missedHardcodedStrings
-                    .OrderByDescending(kv => kv.Value * kv.Key.Length)
-                    .Take(15)
-                    .Where(kv => kv.Value > 1)
-                    .Select(kv => string.Format(CultureInfo.InvariantCulture, "({1} instances x each {2} chars)\n{0}", kv.Key, kv.Value, kv.Key.Length));
+                string title = "Opportunistic Intern";
 
-                Console.WriteLine("##########Top Missing Hardcoded Strings:  \n{0} ", string.Join("\n==============\n", topMissingHardcodedString.ToArray()));
-                Console.WriteLine();
+                if (_gatherStatistics)
+                {
+                    result.AppendLine(string.Format("\n{0}{1}{0}", new string('=', 41 - (title.Length / 2)), title));
+                    result.AppendLine(string.Format("||{0,50}|{1,20:N0}|{2,8}|", "Hardcoded Hits", _hardcodedInternHits, "hits"));
+                    result.AppendLine(string.Format("||{0,50}|{1,20:N0}|{2,8}|", "Hardcoded Rejects", _rejectedStrings, "rejects"));
+                    result.AppendLine(string.Format("||{0,50}|{1,20:N0}|{2,8}|", "WeakStringCache Hits", _regularInternHits, "hits"));
+                    result.AppendLine(string.Format("||{0,50}|{1,20:N0}|{2,8}|", "WeakStringCache Misses", _regularInternMisses, "misses"));
+                    result.AppendLine(string.Format("||{0,50}|{1,20:N0}|{2,8}|", "Eliminated Strings*", _internEliminatedStrings, "strings"));
+                    result.AppendLine(string.Format("||{0,50}|{1,20:N0}|{2,8}|", "Eliminated Chars", _internEliminatedChars, "chars"));
+                    result.AppendLine(string.Format("||{0,50}|{1,20:N0}|{2,8}|", "Estimated Eliminated Bytes", _internEliminatedChars * 2, "bytes"));
+                    result.AppendLine("Elimination assumes that strings provided were unique objects.");
+                    result.AppendLine("|---------------------------------------------------------------------------------|");
 
-                WeakStringCache.DebugInfo debugInfo = _weakStringCache.GetDebugInfo();
-                Console.WriteLine("WeakStringCache statistics:");
-                Console.WriteLine("String count live/collected/total = {0}/{1}/{2}", debugInfo.LiveStringCount, debugInfo.CollectedStringCount, debugInfo.LiveStringCount + debugInfo.CollectedStringCount);
+                    IEnumerable<string> topMissingHardcodedString =
+                        _missedHardcodedStrings
+                        .OrderByDescending(kv => kv.Value * kv.Key.Length)
+                        .Take(15)
+                        .Where(kv => kv.Value > 1)
+                        .Select(kv => string.Format(CultureInfo.InvariantCulture, "({1} instances x each {2} chars)\n{0}", kv.Key, kv.Value, kv.Key.Length));
+
+                    result.AppendLine(string.Format("##########Top Missing Hardcoded Strings:  \n{0} ", string.Join("\n==============\n", topMissingHardcodedString.ToArray())));
+                    result.AppendLine();
+
+                    WeakStringCache.DebugInfo debugInfo = _weakStringCache.GetDebugInfo();
+                    result.AppendLine("WeakStringCache statistics:");
+                    result.AppendLine(string.Format("String count live/collected/total = {0}/{1}/{2}", debugInfo.LiveStringCount, debugInfo.CollectedStringCount, debugInfo.LiveStringCount + debugInfo.CollectedStringCount));
+                }
+                else
+                {
+                    result.Append(title);
+                    result.AppendLine(" - EnableStatisticsGathering() has not been called");
+                }
+
+                return result.ToString();
             }
 
             /// <summary>

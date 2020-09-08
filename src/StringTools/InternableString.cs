@@ -170,7 +170,7 @@ namespace StringTools
         /// </summary>
         private ReadOnlySpan<char> _inlineSpan;
 
-#if NETCOREAPP
+#if NETSTANDARD
         /// <summary>
         /// .NET Core does not keep a reference to the containing object in ReadOnlySpan&lt;T&gt;. In particular, it cannot recover
         /// the string if the span represents one. We have to hold the reference separately to be able to roundtrip
@@ -197,7 +197,7 @@ namespace StringTools
             _inlineSpan = span;
             _spans = null;
             Length = span.Length;
-#if NETCOREAPP
+#if NETSTANDARD
             _inlineSpanString = null;
 #endif
         }
@@ -217,7 +217,7 @@ namespace StringTools
             _inlineSpan = str.AsSpan();
             _spans = null;
             Length = str.Length;
-#if NETCOREAPP
+#if NETSTANDARD
             _inlineSpanString = str;
 #endif
         }
@@ -235,7 +235,7 @@ namespace StringTools
                 _spans.Capacity = capacity;
             }
             Length = 0;
-#if NETCOREAPP
+#if NETSTANDARD
             _inlineSpanString = null;
 #endif
         }
@@ -356,7 +356,7 @@ namespace StringTools
             // Special case: if we hold just one string, we can directly return it.
             if (_inlineSpan.Length == Length)
             {
-#if NETCOREAPP
+#if NETSTANDARD
                 if (_inlineSpanString != null)
                 {
                     return _inlineSpanString;
@@ -440,7 +440,7 @@ namespace StringTools
                 _spans = null;
             }
             Length = 0;
-#if NETCOREAPP
+#if NETSTANDARD
             _inlineSpanString = null;
 #endif
         }
@@ -477,7 +477,7 @@ namespace StringTools
             if (_inlineSpan.Length != oldLength)
             {
                 Length -= (oldLength - _inlineSpan.Length);
-#if NETCOREAPP
+#if NETSTANDARD
                 _inlineSpanString = null;
 #endif
             }
@@ -537,7 +537,7 @@ namespace StringTools
             if (_inlineSpan.Length != oldLength)
             {
                 Length -= (oldLength - _inlineSpan.Length);
-#if NETCOREAPP
+#if NETSTANDARD
                 _inlineSpanString = null;
 #endif
             }
@@ -560,7 +560,7 @@ namespace StringTools
             _inlineSpan = default(ReadOnlySpan<char>);
             _spans?.Clear();
             Length = 0;
-#if NETCOREAPP
+#if NETSTANDARD
             _inlineSpanString = null;
 #endif
         }
