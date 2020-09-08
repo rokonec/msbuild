@@ -1,4 +1,5 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿
+// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -28,6 +29,7 @@ using TaskItem = Microsoft.Build.Execution.ProjectItemInstance.TaskItem;
 using TaskItemFactory = Microsoft.Build.Execution.ProjectItemInstance.TaskItem.TaskItemFactory;
 
 using StringTools;
+using ST = StringTools.StringTools;
 
 namespace Microsoft.Build.Evaluation
 {
@@ -591,7 +593,7 @@ namespace Microsoft.Build.Evaluation
         /// Add the argument in the StringBuilder to the arguments list, handling nulls
         /// appropriately.
         /// </summary>
-        private static void AddArgument(List<string> arguments, ref InternableString argumentBuilder)
+        private static void AddArgument(List<string> arguments, RopeBuilder argumentBuilder)
         {
             // we reached the end of an argument, add the builder's final result
             // to our arguments.
@@ -643,7 +645,7 @@ namespace Microsoft.Build.Evaluation
 
             List<string> arguments = new List<string>();
 
-            InternableString argumentBuilder = new InternableString();
+            RopeBuilder argumentBuilder = ST.GetRopeBuilder();
             int? argumentStartIndex = null;
 
             try
@@ -702,7 +704,7 @@ namespace Microsoft.Build.Evaluation
 
                         // We have reached the end of the current argument, go ahead and add it
                         // to our list
-                        AddArgument(arguments, ref argumentBuilder);
+                        AddArgument(arguments, argumentBuilder);
 
                         // Clear out the argument builder ready for the next argument
                         argumentBuilder.Clear();
@@ -720,7 +722,7 @@ namespace Microsoft.Build.Evaluation
 
                 // This will either be the one and only argument, or the last one
                 // so add it to our list
-                AddArgument(arguments, ref argumentBuilder);
+                AddArgument(arguments, argumentBuilder);
             }
             finally
             {
@@ -793,7 +795,7 @@ namespace Microsoft.Build.Evaluation
                         }
 
                         // otherwise, run the more complex Regex to find item metadata references not contained in transforms
-                        using InternableString finalResultBuilder = new InternableString();
+                        using RopeBuilder finalResultBuilder = ST.GetRopeBuilder();
 
                         int start = 0;
                         MetadataMatchEvaluator matchEvaluator = new MetadataMatchEvaluator(metadata, options);
@@ -1169,7 +1171,7 @@ namespace Microsoft.Build.Evaluation
 
                     // Initialize our output string to empty string.
                     // This method is called very often - of the order of 3,000 times per project.
-                    using InternableString result = new InternableString();
+                    using RopeBuilder result = ST.GetRopeBuilder();
 
                     // Append our collected results
                     if (results != null)
@@ -1340,7 +1342,7 @@ namespace Microsoft.Build.Evaluation
                         // Key and Value are converted to string and escaped
                         if (dictionary.Count > 0)
                         {
-                            using InternableString builder = new InternableString(4 * dictionary.Count - 1);
+                            using RopeBuilder builder = ST.GetRopeBuilder();
 
                             foreach (DictionaryEntry entry in dictionary)
                             {
@@ -1366,7 +1368,7 @@ namespace Microsoft.Build.Evaluation
                     {
                         // If the return is enumerable, then we'll convert to semi-colon delimited elements
                         // each of which must be converted, so we'll recurse for each element
-                        using InternableString builder = new InternableString();
+                        using RopeBuilder builder = ST.GetRopeBuilder();
 
                         foreach (object element in enumerable)
                         {
@@ -1787,22 +1789,15 @@ namespace Microsoft.Build.Evaluation
                     // a scalar and then create a single item. Basically we need this
                     // to be able to convert item lists with user specified separators into properties.
                     string expandedItemVector;
-                    InternableString builder = new InternableString();
-                    try
-                    {
-                        brokeEarlyNonEmpty = ExpandExpressionCaptureIntoInternableString(expander, expressionCapture, items, elementLocation, ref builder, options);
+                    using RopeBuilder builder = ST.GetRopeBuilder();
+                    brokeEarlyNonEmpty = ExpandExpressionCaptureIntoRopeBuilder(expander, expressionCapture, items, elementLocation, builder, options);
 
-                        if (brokeEarlyNonEmpty)
-                        {
-                            return null;
-                        }
-
-                        expandedItemVector = builder.ToString();
-                    }
-                    finally
+                    if (brokeEarlyNonEmpty)
                     {
-                        builder.Dispose();
+                        return null;
                     }
+
+                    expandedItemVector = builder.ToString();
 
                     result = new List<T>(1);
 
@@ -1974,43 +1969,36 @@ namespace Microsoft.Build.Evaluation
                     return expression;
                 }
 
-                InternableString builder = new InternableString();
-                try
+                using RopeBuilder builder = ST.GetRopeBuilder();
+                // As we walk through the matches, we need to copy out the original parts of the string which
+                // are not covered by the match.  This preserves original behavior which did not trim whitespace
+                // from between separators.
+                int lastStringIndex = 0;
+                for (int i = 0; i < matches.Count; i++)
                 {
-                    // As we walk through the matches, we need to copy out the original parts of the string which
-                    // are not covered by the match.  This preserves original behavior which did not trim whitespace
-                    // from between separators.
-                    int lastStringIndex = 0;
-                    for (int i = 0; i < matches.Count; i++)
+                    if (matches[i].Index > lastStringIndex)
                     {
-                        if (matches[i].Index > lastStringIndex)
-                        {
-                            if ((options & ExpanderOptions.BreakOnNotEmpty) != 0)
-                            {
-                                return null;
-                            }
-
-                            builder.Append(expression, lastStringIndex, matches[i].Index - lastStringIndex);
-                        }
-
-                        bool brokeEarlyNonEmpty = ExpandExpressionCaptureIntoInternableString(expander, matches[i], items, elementLocation, ref builder, options);
-
-                        if (brokeEarlyNonEmpty)
+                        if ((options & ExpanderOptions.BreakOnNotEmpty) != 0)
                         {
                             return null;
                         }
 
-                        lastStringIndex = matches[i].Index + matches[i].Length;
+                        builder.Append(expression, lastStringIndex, matches[i].Index - lastStringIndex);
                     }
 
-                    builder.Append(expression, lastStringIndex, expression.Length - lastStringIndex);
+                    bool brokeEarlyNonEmpty = ExpandExpressionCaptureIntoRopeBuilder(expander, matches[i], items, elementLocation, builder, options);
 
-                    return builder.ToString();
+                    if (brokeEarlyNonEmpty)
+                    {
+                        return null;
+                    }
+
+                    lastStringIndex = matches[i].Index + matches[i].Length;
                 }
-                finally
-                {
-                    builder.Dispose();
-                }
+
+                builder.Append(expression, lastStringIndex, expression.Length - lastStringIndex);
+
+                return builder.ToString();
             }
 
             /// <summary>
@@ -2061,12 +2049,12 @@ namespace Microsoft.Build.Evaluation
             /// Returns true if ExpanderOptions.BreakOnNotEmpty was passed, expression was going to be non-empty, and so it broke out early.
             /// </summary>
             /// <typeparam name="S">Type of source items</typeparam>
-            private static bool ExpandExpressionCaptureIntoInternableString<S>(
+            private static bool ExpandExpressionCaptureIntoRopeBuilder<S>(
                 Expander<P, I> expander,
                 ExpressionShredder.ItemExpressionCapture capture,
                 IItemProvider<S> evaluatedItems,
                 IElementLocation elementLocation,
-                ref InternableString builder,
+                RopeBuilder builder,
                 ExpanderOptions options
                 )
                 where S : class, IItem

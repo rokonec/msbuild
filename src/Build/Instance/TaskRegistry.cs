@@ -13,7 +13,7 @@ using Microsoft.Build.Evaluation;
 using Microsoft.Build.Construction;
 using Microsoft.Build.BackEnd;
 
-using StringTools;
+using ST = StringTools.StringTools;
 
 using ILoggingService = Microsoft.Build.BackEnd.Logging.ILoggingService;
 using InvalidProjectFileException = Microsoft.Build.Exceptions.InvalidProjectFileException;
@@ -310,7 +310,7 @@ namespace Microsoft.Build.Execution
 
                 if (assemblyFile != null && !Path.IsPathRooted(assemblyFile))
                 {
-                    assemblyFile = InternableString.Intern(Path.Combine(directoryOfImportingFile, assemblyFile));
+                    assemblyFile = ST.TryIntern(Path.Combine(directoryOfImportingFile, assemblyFile));
                 }
 
                 if (String.Equals(taskFactory, RegisteredTaskRecord.CodeTaskFactory, StringComparison.OrdinalIgnoreCase) || String.Equals(taskFactory, RegisteredTaskRecord.XamlTaskFactory, StringComparison.OrdinalIgnoreCase))

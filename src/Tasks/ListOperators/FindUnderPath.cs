@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Shared;
 
-using StringTools;
+using ST = StringTools.StringTools;
 
 namespace Microsoft.Build.Tasks
 {
@@ -56,7 +56,7 @@ namespace Microsoft.Build.Tasks
             try
             {
                 conePath =
-                    InternableString.Intern(
+                    ST.TryIntern(
                         System.IO.Path.GetFullPath(FileUtilities.FixFilePath(Path.ItemSpec)));
                 conePath = FileUtilities.EnsureTrailingSlash(conePath);
             }
@@ -77,7 +77,7 @@ namespace Microsoft.Build.Tasks
                 try
                 {
                     fullPath =
-                        InternableString.Intern(
+                        ST.TryIntern(
                             System.IO.Path.GetFullPath(FileUtilities.FixFilePath(item.ItemSpec)));
                 }
                 catch (Exception e) when (ExceptionHandling.IsIoRelatedException(e))

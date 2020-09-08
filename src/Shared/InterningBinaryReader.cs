@@ -2,15 +2,13 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections.Generic;
 using System.Text;
 using System.IO;
 using System.Diagnostics;
-using System.Globalization;
 
 using ErrorUtilities = Microsoft.Build.Shared.ErrorUtilities;
-using Microsoft.Build.Shared;
-using StringTools;
+
+using ST = StringTools.StringTools;
 
 namespace Microsoft.Build
 {
@@ -132,7 +130,7 @@ namespace Microsoft.Build
                     if (currPos == 0 && n == stringLength)
                     {
                         charsRead = _decoder.GetChars(rawBuffer, rawPosition, n, charBuffer, 0);
-                        return new InternableString(charBuffer.AsSpan(0, charsRead)).ToString();
+                        return ST.TryIntern(charBuffer.AsSpan(0, charsRead));
                     }
 
                     resultBuffer ??= new char[stringLength]; // Actual string length in chars may be smaller.
@@ -142,7 +140,7 @@ namespace Microsoft.Build
                 }
                 while (currPos < stringLength);
 
-                return new InternableString(resultBuffer.AsSpan(0, charsRead)).ToString();
+                return ST.TryIntern(resultBuffer.AsSpan(0, charsRead));
             }
             catch (Exception e)
             {

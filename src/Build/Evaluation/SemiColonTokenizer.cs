@@ -5,7 +5,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
-using StringTools;
+using ST = StringTools.StringTools;
 
 namespace Microsoft.Build.Evaluation
 {
@@ -148,8 +148,7 @@ namespace Microsoft.Build.Evaluation
                 }
                 if (startIndex < endIndex)
                 {
-                    InternableString span = new InternableString(_expression.AsSpan(startIndex, endIndex - startIndex));
-                    return span.ToString();
+                    return ST.TryIntern(_expression.AsSpan(startIndex, endIndex - startIndex));
                 }
                 return null;
             }

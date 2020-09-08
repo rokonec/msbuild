@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using Microsoft.Extensions.ObjectPool;
 
 namespace StringTools
 {
@@ -124,47 +123,7 @@ namespace StringTools
         }
 
         /// <summary>
-        /// IPooledObjectPolicy used by <cref see="s_arrayListPool"/>.
-        /// </summary>
-        private class PooledObjectPolicy : IPooledObjectPolicy<List<ReadOnlyMemory<char>>>
-        {
-            /// <summary>
-            /// No need to retain excessively long list forever.
-            /// </summary>
-            private const int MAX_RETAINED_LIST_CAPACITY = 1000;
-
-            /// <summary>
-            /// Creates a new list with the default capacity.
-            /// </summary>
-            public List<ReadOnlyMemory<char>> Create()
-            {
-                return new List<ReadOnlyMemory<char>>();
-            }
-
-            /// <summary>
-            /// Returns a list to the pool unless it's excessively long.
-            /// </summary>
-            public bool Return(List<ReadOnlyMemory<char>> obj)
-            {
-                if (obj.Capacity <= MAX_RETAINED_LIST_CAPACITY)
-                {
-                    obj.Clear();
-                    return true;
-                }
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// A pool of lists as we don't want to be allocating a new one every time an InternableString is created / appended to. Since
-        /// InternableString instances must live on the stack, there is rarely more than one used by a given thread. Thus using the number
-        /// of CPUs should be a reasonable heuristic.
-        /// </summary>
-        private static DefaultObjectPool<List<ReadOnlyMemory<char>>> s_arrayListPool =
-            new DefaultObjectPool<List<ReadOnlyMemory<char>>>(new PooledObjectPolicy(), Environment.ProcessorCount);
-
-        /// <summary>
-        /// The first span held by this struct, inline to be able to represent ReadOnlySpan&lt;char&gt;. May be empty.
+        /// The span held by this struct, inline to be able to represent ReadOnlySpan&lt;char&gt;. May be empty.
         /// </summary>
         private ReadOnlySpan<char> _inlineSpan;
 
@@ -178,19 +137,18 @@ namespace StringTools
 #endif
 
         /// <summary>
-        /// Additional spans held by this struct (logically following _inlineSpan). May be null.
+        /// Additional spans held by this struct. May be null.
         /// </summary>
         private List<ReadOnlyMemory<char>> _spans;
 
         /// <summary>
-        /// Constructs a new InternableString wrapping the given ReadOnlySpan&lt;char&gt;. The struct is still mutable and can be
-        /// used as a StringBuilder, although mutations may require an allocation.
+        /// Constructs a new InternableString wrapping the given ReadOnlySpan&lt;char&gt;.
         /// </summary>
         /// <param name="span">The span to wrap.</param>
         /// <remarks>
         /// When wrapping a span representing an entire System.String, use Internable(string) for optimum performance.
         /// </remarks>
-        public InternableString(ReadOnlySpan<char> span)
+        internal InternableString(ReadOnlySpan<char> span)
         {
             _inlineSpan = span;
             _spans = null;
@@ -201,11 +159,10 @@ namespace StringTools
         }
 
         /// <summary>
-        /// Constructs a new InternableString wrapping the given string. The instance is still mutable and can be used as a StringBuilder,
-        /// although that may require an allocation.
+        /// Constructs a new InternableString wrapping the given string.
         /// </summary>
         /// <param name="str">The string to wrap, must be non-null.</param>
-        public InternableString(string str)
+        internal InternableString(string str)
         {
             if (str == null)
             {
@@ -221,18 +178,13 @@ namespace StringTools
         }
 
         /// <summary>
-        /// Constructs a new empty InternableString with the given expected number of spans. Such an InternableString is used similarly
-        /// to a StringBuilder. This constructor allocates GC memory.
+        /// Constructs a new InternableString wrapping the given RopeBuilder.
         /// </summary>
-        public InternableString(int capacity = 4)
+        internal InternableString(RopeBuilder ropeBuilder)
         {
             _inlineSpan = default(ReadOnlySpan<char>);
-            _spans = s_arrayListPool.Get();
-            if (_spans.Capacity < capacity)
-            {
-                _spans.Capacity = capacity;
-            }
-            Length = 0;
+            _spans = ropeBuilder.Spans;
+            Length = ropeBuilder.Length;
 #if NETSTANDARD
             _inlineSpanString = null;
 #endif
@@ -242,16 +194,6 @@ namespace StringTools
         /// Gets the length of the string.
         /// </summary>
         public int Length { get; private set; }
-
-        /// <summary>
-        /// A convenience static method to intern a System.String.
-        /// </summary>
-        /// <param name="str">The string to intern.</param>
-        /// <returns>A string identical in content to <paramref name="str"/>.</returns>
-        public static string Intern(string str)
-        {
-            return new InternableString(str).ToString();
-        }
 
         /// <summary>
         /// Creates a new enumerator for enumerating characters in this string. Does not allocate.
@@ -424,156 +366,6 @@ namespace StringTools
         public override unsafe string ToString()
         {
             return OpportunisticIntern.Instance.InternableToString(ref this);
-        }
-
-        /// <summary>
-        /// Releases this instance.
-        /// </summary>
-        public void Dispose()
-        {
-            _inlineSpan = default(ReadOnlySpan<char>);
-            if (_spans != null)
-            {
-                s_arrayListPool.Return(_spans);
-                _spans = null;
-            }
-            Length = 0;
-#if NETSTANDARD
-            _inlineSpanString = null;
-#endif
-        }
-
-        #region Mutating public methods
-
-        /// <summary>
-        /// Appends a string.
-        /// </summary>
-        /// <param name="value">The string to append.</param>
-        public void Append(string value)
-        {
-            AddSpan(value.AsMemory());
-        }
-
-        /// <summary>
-        /// Appends a substring.
-        /// </summary>
-        /// <param name="value">The string to append.</param>
-        /// <param name="startIndex">The start index of the substring within <paramref name="value"/> to append.</param>
-        /// <param name="count">The length of the substring to append.</param>
-        public void Append(string value, int startIndex, int count)
-        {
-            AddSpan(value.AsMemory(startIndex, count));
-        }
-
-        /// <summary>
-        /// Removes leading white-space characters from the string.
-        /// </summary>
-        public void TrimStart()
-        {
-            int oldLength = _inlineSpan.Length;
-            _inlineSpan = _inlineSpan.TrimStart();
-            if (_inlineSpan.Length != oldLength)
-            {
-                Length -= (oldLength - _inlineSpan.Length);
-#if NETSTANDARD
-                _inlineSpanString = null;
-#endif
-            }
-
-            if (_inlineSpan.IsEmpty && _spans != null)
-            {
-                for (int spanIdx = 0; spanIdx < _spans.Count; spanIdx++)
-                {
-                    ReadOnlySpan<char> span = _spans[spanIdx].Span;
-                    int i = 0;
-                    while (i < span.Length && char.IsWhiteSpace(span[i]))
-                    {
-                        i++;
-                    }
-                    if (i > 0)
-                    {
-                        _spans[spanIdx] = _spans[spanIdx].Slice(i);
-                        Length -= i;
-                    }
-                    if (!_spans[spanIdx].IsEmpty)
-                    {
-                        return;
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Removes trailing white-space characters from the string.
-        /// </summary>
-        public void TrimEnd()
-        {
-            if (_spans != null)
-            {
-                for (int spanIdx = _spans.Count - 1; spanIdx >= 0; spanIdx--)
-                {
-                    ReadOnlySpan<char> span = _spans[spanIdx].Span;
-                    int i = span.Length - 1;
-                    while (i >= 0 && char.IsWhiteSpace(span[i]))
-                    {
-                        i--;
-                    }
-                    if (i + 1 < span.Length)
-                    {
-                        _spans[spanIdx] = _spans[spanIdx].Slice(0, i + 1);
-                        Length -= span.Length - (i + 1);
-                    }
-                    if (!_spans[spanIdx].IsEmpty)
-                    {
-                        return;
-                    }
-                }
-            }
-
-            int oldLength = _inlineSpan.Length;
-            _inlineSpan = _inlineSpan.TrimEnd();
-            if (_inlineSpan.Length != oldLength)
-            {
-                Length -= (oldLength - _inlineSpan.Length);
-#if NETSTANDARD
-                _inlineSpanString = null;
-#endif
-            }
-        }
-
-        /// <summary>
-        /// Removes leading and trailing white-space characters from the string.
-        /// </summary>
-        public void Trim()
-        {
-            TrimStart();
-            TrimEnd();
-        }
-
-        /// <summary>
-        /// Clears this instance making it represent an empty string.
-        /// </summary>
-        public void Clear()
-        {
-            _inlineSpan = default(ReadOnlySpan<char>);
-            _spans?.Clear();
-            Length = 0;
-#if NETSTANDARD
-            _inlineSpanString = null;
-#endif
-        }
-
-        #endregion
-
-        /// <summary>
-        /// Appends a ReadOnlyMemory&lt;char&gt; span to the string.
-        /// </summary>
-        /// <param name="span"></param>
-        private void AddSpan(ReadOnlyMemory<char> span)
-        {
-            _spans ??= s_arrayListPool.Get();
-            _spans.Add(span);
-            Length += span.Length;
         }
     }
 }

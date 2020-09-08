@@ -7,6 +7,7 @@ using Microsoft.Build.Framework;
 using Microsoft.Build.Shared;
 
 using StringTools;
+using ST = StringTools.StringTools;
 
 #if BUILD_ENGINE
 namespace Microsoft.Build.BackEnd
@@ -163,22 +164,22 @@ namespace Microsoft.Build.Tasks
                 // needs to pass onto the engine.
                 log?.LogMessageFromText(parameterName, MessageImportance.Low);
 
-                using InternableString internableString = new InternableString();
+                using RopeBuilder ropeBuilder = ST.GetRopeBuilder();
                 foreach (PropertyNameValuePair propertyNameValuePair in finalPropertiesList)
                 {
-                    internableString.Clear();
+                    ropeBuilder.Clear();
                     bool needsSemicolon = false;
                     foreach (string valueFragment in propertyNameValuePair.Value)
                     {
                         if (needsSemicolon)
                         {
-                            internableString.Append(";");
+                            ropeBuilder.Append(";");
                         }
                         needsSemicolon = true;
-                        internableString.Append(valueFragment);
+                        ropeBuilder.Append(valueFragment);
                     }
 
-                    string propertyValue = internableString.ToString();
+                    string propertyValue = ropeBuilder.ToString();
                     finalPropertiesTable[propertyNameValuePair.Name] = propertyValue;
                     log?.LogMessageFromText(
                         $"  {propertyNameValuePair.Name}={propertyValue}",

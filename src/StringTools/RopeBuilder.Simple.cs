@@ -1,0 +1,152 @@
+﻿// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq.Expressions;
+using System.Text;
+
+namespace StringTools
+{
+    /// <summary>
+    /// </summary>
+    public class RopeBuilder : IDisposable
+    {
+        /// <summary>
+        /// Enumerator for the top-level struct. Enumerates characters of the string.
+        /// </summary>
+        public struct Enumerator
+        {
+            /// <summary>
+            /// The StringBuilder being enumerated.
+            /// </summary>
+            private StringBuilder _builder;
+
+            /// <summary>
+            /// Index of the current character, -1 if MoveNext has not been called yet.
+            /// </summary>
+            private int _charIndex;
+
+            public Enumerator(StringBuilder builder)
+            {
+                _builder = builder;
+                _charIndex = -1;
+            }
+
+            /// <summary>
+            /// Returns the current character.
+            /// </summary>
+            public char Current => _builder[_charIndex];
+
+            /// <summary>
+            /// Moves to the next character.
+            /// </summary>
+            /// <returns>True if there is another character, false if the enumerator reached the end.</returns>
+            public bool MoveNext()
+            {
+                int newIndex = _charIndex + 1;
+                if (newIndex < _builder.Length)
+                {
+                    _charIndex = newIndex;
+                    return true;
+                }
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// The backing StringBuilder.
+        /// </summary>
+        private StringBuilder _builder;
+
+        internal StringBuilder Builder => _builder;
+
+        /// <summary>
+        /// Constructs a new RopeBuilder and appends the given string.
+        /// </summary>
+        /// <param name="str">The string to wrap, must be non-null.</param>
+        public RopeBuilder(string str)
+            : this()
+        {
+            if (str == null)
+            {
+                throw new ArgumentNullException(nameof(str));
+            }
+            Append(str);
+        }
+
+        /// <summary>
+        /// Constructs a new empty RopeBuilder with the given expected number of spans.
+        /// </summary>
+        public RopeBuilder(int capacity = 4)
+        {
+            _builder = new StringBuilder(capacity * 128);
+        }
+
+        /// <summary>
+        /// Gets the length of the string.
+        /// </summary>
+        public int Length => _builder.Length;
+
+        /// <summary>
+        /// Creates a new enumerator for enumerating characters in this string. Does not allocate.
+        /// </summary>
+        /// <returns>The enumerator.</returns>
+        public Enumerator GetEnumerator()
+        {
+            return new Enumerator(_builder);
+        }
+
+        /// <summary>
+        /// Converts this instance to a System.String while first searching for a match in the intern table.
+        /// </summary>
+        /// <remarks>
+        /// May allocate depending on whether the string has already been interned.
+        /// </remarks>
+        public override string ToString()
+        {
+            return new InternableString(this).ToString();
+        }
+
+        /// <summary>
+        /// Releases this instance.
+        /// </summary>
+        public void Dispose()
+        {
+            StringTools.ReturnRopeBuilder(this);
+        }
+
+        #region Mutating public methods
+
+        /// <summary>
+        /// Appends a string.
+        /// </summary>
+        /// <param name="value">The string to append.</param>
+        internal void Append(string value)
+        {
+            _builder.Append(value);
+        }
+
+        /// <summary>
+        /// Appends a substring.
+        /// </summary>
+        /// <param name="value">The string to append.</param>
+        /// <param name="startIndex">The start index of the substring within <paramref name="value"/> to append.</param>
+        /// <param name="count">The length of the substring to append.</param>
+        internal void Append(string value, int startIndex, int count)
+        {
+            _builder.Append(value, startIndex, count);
+        }
+
+        /// <summary>
+        /// Clears this instance making it represent an empty string.
+        /// </summary>
+        public void Clear()
+        {
+            _builder.Length = 0;
+        }
+
+        #endregion
+    }
+}

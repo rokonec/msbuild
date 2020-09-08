@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 
-using StringTools;
+using ST = StringTools.StringTools;
 
 namespace Microsoft.Build.Shared
 {
@@ -189,7 +189,7 @@ namespace Microsoft.Build.Shared
                 return StringBuilderCache.GetStringAndRelease(escapedStringBuilder);
             }
 
-            string escapedString = InternableString.Intern(escapedStringBuilder.ToString());
+            string escapedString = ST.TryIntern(escapedStringBuilder.ToString());
             StringBuilderCache.Release(escapedStringBuilder);
 
             lock (s_unescapedToEscapedStrings)

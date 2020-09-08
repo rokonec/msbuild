@@ -13,6 +13,7 @@ using System.Text;
 using System.Xml;
 
 using StringTools;
+using ST = StringTools.StringTools;
 
 using Microsoft.Build.BackEnd.SdkResolution;
 using Microsoft.Build.Framework;
@@ -1099,7 +1100,8 @@ namespace Microsoft.Build.Construction
         /// </summary>
         private static string GetPropertiesAttributeForDirectMSBuildTask(ProjectConfigurationInSolution projectConfiguration)
         {
-            using InternableString directProjectProperties = new InternableString(GetConfigurationAndPlatformPropertiesString(projectConfiguration));
+            using RopeBuilder directProjectProperties = ST.GetRopeBuilder();
+            directProjectProperties.Append(GetConfigurationAndPlatformPropertiesString(projectConfiguration));
             directProjectProperties.Append(";");
             directProjectProperties.Append(SolutionProperties);
             return directProjectProperties.ToString();
@@ -1348,8 +1350,9 @@ namespace Microsoft.Build.Construction
         private void AddMetaprojectBuildTask(ProjectInSolution project, ProjectTargetInstance target, string targetToBuild, string outputItem)
         {
             ProjectTaskInstance task;
-            using (InternableString condition = new InternableString("'%(ProjectReference.Identity)' == '"))
+            using (RopeBuilder condition = ST.GetRopeBuilder())
             {
+                condition.Append("'%(ProjectReference.Identity)' == '");
                 condition.Append(GetMetaprojectName(project));
                 condition.Append("'");
 

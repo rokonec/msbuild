@@ -1,8 +1,14 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+
+#if !NET35
+using Microsoft.Extensions.ObjectPool;
+#endif
 
 namespace StringTools
 {
@@ -17,9 +23,79 @@ namespace StringTools
 
     public static class StringTools
     {
+#if !NET35
+        /// <summary>
+        /// IPooledObjectPolicy used by <cref see="s_ropeBuilderPool"/>.
+        /// </summary>
+        private class PooledObjectPolicy : IPooledObjectPolicy<RopeBuilder>
+        {
+            /// <summary>
+            /// No need to retain excessively long list forever.
+            /// </summary>
+            private const int MAX_RETAINED_LIST_CAPACITY = 1000;
+
+            /// <summary>
+            /// Creates a new list with the default capacity.
+            /// </summary>
+            public RopeBuilder Create()
+            {
+                return new RopeBuilder();
+            }
+
+            /// <summary>
+            /// Returns a builder to the pool unless it's excessively long.
+            /// </summary>
+            public bool Return(RopeBuilder ropeBuilder)
+            {
+                if (ropeBuilder.Capacity <= MAX_RETAINED_LIST_CAPACITY)
+                {
+                    ropeBuilder.Clear();
+                    return true;
+                }
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// A pool of RopeBuilders as we don't want to be allocating every time a new one is requested.
+        /// </summary>
+        private static DefaultObjectPool<RopeBuilder> s_ropeBuilderPool =
+            new DefaultObjectPool<RopeBuilder>(new PooledObjectPolicy(), Environment.ProcessorCount);
+#endif
+
         private static volatile TryInternStringDelegate[] s_internStringCallbacks = new TryInternStringDelegate[0];
 
         private static object s_locker = new object();
+
+        public static string TryIntern(string str)
+        {
+            InternableString internableString = new InternableString(str);
+            return OpportunisticIntern.Instance.InternableToString(ref internableString);
+        }
+
+#if !NET35
+        public static string TryIntern(ReadOnlySpan<char> str)
+        {
+            InternableString internableString = new InternableString(str);
+            return OpportunisticIntern.Instance.InternableToString(ref internableString);
+        }
+#endif
+
+        public static RopeBuilder GetRopeBuilder()
+        {
+#if NET35
+            return new RopeBuilder();
+#else
+            return s_ropeBuilderPool.Get();
+#endif
+        }
+
+        internal static void ReturnRopeBuilder(RopeBuilder ropeBuilder)
+        {
+#if !NET35
+            s_ropeBuilderPool.Return(ropeBuilder);
+#endif
+        }
 
         public static void EnableDiagnostics()
         {

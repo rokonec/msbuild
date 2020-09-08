@@ -79,7 +79,7 @@ namespace StringTools
         }
 
         /// <summary>
-        /// If this instance is used in a StringBuilder-like manner, it uses this backing field.
+        /// If this instance wraps a StringBuilder, it uses this backing field.
         /// </summary>
         private StringBuilder _builder;
 
@@ -94,11 +94,10 @@ namespace StringTools
         private string FirstString => _firstString ?? string.Empty;
 
         /// <summary>
-        /// Constructs a new InternableString wrapping the given string. The instance is still mutable and can be used as a StringBuilder,
-        /// although that may require an allocation.
+        /// Constructs a new InternableString wrapping the given string.
         /// </summary>
         /// <param name="str">The string to wrap, must be non-null.</param>
-        public InternableString(string str)
+        internal InternableString(string str)
         {
             if (str == null)
             {
@@ -109,12 +108,11 @@ namespace StringTools
         }
 
         /// <summary>
-        /// Constructs a new empty InternableString with the given expected number of spans. Such an InternableString is used similarly
-        /// to a StringBuilder. This constructor allocates GC memory.
+        /// Constructs a new InternableString wrapping the given RopeBuilder.
         /// </summary>
-        internal InternableString(int capacity = 4)
+        internal InternableString(RopeBuilder builder)
         {
-            _builder = new StringBuilder(capacity * 128);
+            _builder = builder.Builder;
             _firstString = null;
         }
 
@@ -122,16 +120,6 @@ namespace StringTools
         /// Gets the length of the string.
         /// </summary>
         public int Length => (_builder == null ? FirstString.Length : _builder.Length);
-
-        /// <summary>
-        /// A convenience static method to intern a System.String.
-        /// </summary>
-        /// <param name="str">The string to intern.</param>
-        /// <returns>A string identical in content to <paramref name="str"/>.</returns>
-        public static string Intern(string str)
-        {
-            return new InternableString(str).ToString();
-        }
 
         /// <summary>
         /// Creates a new enumerator for enumerating characters in this string. Does not allocate.
@@ -209,42 +197,6 @@ namespace StringTools
         public override unsafe string ToString()
         {
             return OpportunisticIntern.Instance.InternableToString(ref this);
-        }
-
-        /// <summary>
-        /// Appends a string.
-        /// </summary>
-        /// <param name="value">The string to append.</param>
-        internal void Append(string value)
-        {
-            _builder ??= new StringBuilder(FirstString);
-            _firstString = null;
-            _builder.Append(value);
-        }
-
-        /// <summary>
-        /// Appends a substring.
-        /// </summary>
-        /// <param name="value">The string to append.</param>
-        /// <param name="startIndex">The start index of the substring within <paramref name="value"/> to append.</param>
-        /// <param name="count">The length of the substring to append.</param>
-        internal void Append(string value, int startIndex, int count)
-        {
-            _builder ??= new StringBuilder(FirstString);
-            _firstString = null;
-            _builder.Append(value, startIndex, count);
-        }
-
-        /// <summary>
-        /// Clears this instance making it represent an empty string.
-        /// </summary>
-        public void Clear()
-        {
-            _firstString = string.Empty;
-            if (_builder != null)
-            {
-                _builder.Length = 0;
-            }
         }
     }
 }
