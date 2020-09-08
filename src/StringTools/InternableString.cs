@@ -3,8 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Resources;
-using System.Text;
 using Microsoft.Extensions.ObjectPool;
 
 namespace StringTools
