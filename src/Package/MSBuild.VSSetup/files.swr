@@ -56,6 +56,8 @@ folder InstallDir:\MSBuild\Current\Bin
   file source=$(X86BinPath)Microsoft.VisualStudio.Validation.dll vs.file.ngenArchitecture=all
   file source=$(X86BinPath)MessagePack.dll vs.file.ngenArchitecture=all
   file source=$(X86BinPath)MessagePack.Annotations.dll vs.file.ngenArchitecture=all
+  file source=$(X86BinPath)StringTools.dll vs.file.ngenArchitecture=all
+  file source=$(X86BinPath)StringTools.net35.dll vs.file.ngenArchitecture=all
   file source=$(X86BinPath)Microsoft.Common.CurrentVersion.targets
   file source=$(X86BinPath)Microsoft.Common.CrossTargeting.targets
   file source=$(X86BinPath)Microsoft.Common.overridetasks
@@ -213,6 +215,8 @@ folder InstallDir:\MSBuild\Current\Bin\amd64
   file source=$(X86BinPath)Microsoft.VisualStudio.Validation.dll vs.file.ngenArchitecture=all
   file source=$(X86BinPath)MessagePack.dll vs.file.ngenArchitecture=all
   file source=$(X86BinPath)MessagePack.Annotations.dll vs.file.ngenArchitecture=all
+  file source=$(X86BinPath)StringTools.dll vs.file.ngenArchitecture=all
+  file source=$(X86BinPath)StringTools.net35.dll vs.file.ngenArchitecture=all
   file source=$(X86BinPath)Microsoft.Common.CurrentVersion.targets
   file source=$(X86BinPath)Microsoft.Common.CrossTargeting.targets
   file source=$(X86BinPath)Microsoft.Common.overridetasks
