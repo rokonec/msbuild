@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace StringTools
 {
@@ -42,7 +43,6 @@ namespace StringTools
 
             StringWeakHandle handle;
             string result;
-            bool addingNewHandle = false;
 
             // Get the existing handle from the cache and lock it while we're dereferencing it to prevent a race with the Scavenge
             // method running on another thread and freeing the handle from underneath us.
@@ -51,40 +51,36 @@ namespace StringTools
                 lock (handle)
                 {
                     result = handle.GetString(ref internable);
-                }
-                if (result != null)
-                {
-                    cacheHit = true;
+                    if (result != null)
+                    {
+                        cacheHit = true;
+                        return result;
+                    }
+
+                    // We have the handle but it's not referencing the right string - create the right string and store it in the handle.
+                    result = internable.ExpensiveConvertToString();
+                    handle.SetString(result);
+
+                    cacheHit = false;
                     return result;
                 }
             }
-            else
-            {
-                handle = new StringWeakHandle();
-                addingNewHandle = true;
-            }
 
-            // We don't have the string in the cache - create it.
+            // We don't have the handle in the cache - create the right string, store it in the handle, and add the handle to the cache.
             result = internable.ExpensiveConvertToString();
 
-            // Set the handle to reference the new string and put it in the cache.
+            handle = new StringWeakHandle();
             handle.SetString(result);
-            if (!_stringsByHashCode.TryAdd(hashCode, handle))
-            {
-                // Another thread has managed to add a handle for the same hash code, so the one we got can be freed.
-                handle.Free();
-            }
+            _stringsByHashCode.TryAdd(hashCode, handle);
 
-            // Remove unused handles if our heuristic indicates that it would be productive. Note that the _scavengeThreshold field
-            // accesses are not protected from races. Being atomic (as guaranteed by the 32-bit data type) is enough here.
-            if (addingNewHandle)
+            // Remove unused handles if our heuristic indicates that it would be productive.
+            int scavengeThreshold = _scavengeThreshold;
+            if (_stringsByHashCode.Count >= scavengeThreshold)
             {
-                // Prevent the dictionary from growing forever with GC handles that don't reference live strings anymore.
-                if (_stringsByHashCode.Count >= _scavengeThreshold)
+                // Before we start scavenging set _scavengeThreshold to a high value to effectively lock other threads from
+                // running Scavenge at the same time.
+                if (Interlocked.CompareExchange(ref _scavengeThreshold, int.MaxValue, scavengeThreshold) == scavengeThreshold)
                 {
-                    // Before we start scavenging set _scavengeThreshold to a high value to effectively lock other threads from
-                    // running Scavenge at the same time (minus rare races).
-                    _scavengeThreshold = int.MaxValue;
                     try
                     {
                         // Get rid of unused handles.
@@ -110,6 +106,7 @@ namespace StringTools
         {
             foreach (KeyValuePair<int, StringWeakHandle> entry in _stringsByHashCode)
             {
+                // We can safely dereference entry.Value as the caller guarantees Scavenge does not run on another thread.
                 if (!entry.Value.IsUsed && _stringsByHashCode.TryRemove(entry.Key, out StringWeakHandle removedHandle))
                 {
                     lock (removedHandle)
