@@ -28,7 +28,7 @@ namespace StringTools
         /// <summary>
         /// Holds a weak GC handle to a string. Shared by all strings with the same hash code and referencing the last such string we've seen.
         /// </summary>
-        private struct StringWeakHandle
+        private class StringWeakHandle
         {
             /// <summary>
             /// Weak GC handle to the last string of the given hashcode we've seen.

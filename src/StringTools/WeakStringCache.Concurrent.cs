@@ -44,19 +44,16 @@ namespace StringTools
             string result;
             bool addingNewHandle = false;
 
-            // Get the existing handle from the cache and assume ownership by removing it. We can't use the simple TryGetValue() here because
-            // the Scavenge method running on another thread could free the handle from underneath us.
-            if (_stringsByHashCode.TryRemove(hashCode, out handle))
+            // Get the existing handle from the cache and lock it while we're dereferencing it to prevent a race with the Scavenge
+            // method running on another thread and freeing the handle from underneath us.
+            if (_stringsByHashCode.TryGetValue(hashCode, out handle))
             {
-                result = handle.GetString(ref internable);
+                lock (handle)
+                {
+                    result = handle.GetString(ref internable);
+                }
                 if (result != null)
                 {
-                    // We have a hit, put the handle back in the cache.
-                    if (!_stringsByHashCode.TryAdd(hashCode, handle))
-                    {
-                        // Another thread has managed to add a handle for the same hash code, so the one we got can be freed.
-                        handle.Free();
-                    }
                     cacheHit = true;
                     return result;
                 }
@@ -115,11 +112,14 @@ namespace StringTools
             {
                 if (!entry.Value.IsUsed && _stringsByHashCode.TryRemove(entry.Key, out StringWeakHandle removedHandle))
                 {
-                    // Note that the removed handle may be different from the one we got from the enumerator so check again
-                    // and try to put it back if it's still in use.
-                    if (!removedHandle.IsUsed || !_stringsByHashCode.TryAdd(entry.Key, removedHandle))
+                    lock (removedHandle)
                     {
-                        removedHandle.Free();
+                        // Note that the removed handle may be different from the one we got from the enumerator so check again
+                        // and try to put it back if it's still in use.
+                        if (!removedHandle.IsUsed || !_stringsByHashCode.TryAdd(entry.Key, removedHandle))
+                        {
+                            removedHandle.Free();
+                        }
                     }
                 }
             }
