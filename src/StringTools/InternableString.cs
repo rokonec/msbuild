@@ -11,36 +11,8 @@ namespace StringTools
     /// and is still tracked in the intern table.
     /// </summary>
     /// <remarks>
-    /// The string is represented with a series of character spans describing the fragments making up the string. There are two principal use cases:
-    /// 
-    /// 1) An internable System.String, aka a string wrapper.
-    ///    Wraps an existing string, substring, character array/sub-array, char *, or any other ReadOnlySpan&lt;char&gt; so it can be interned.
-    ///    The advantage over first creating the desired System.String and then interning it is that it does away with the ephemeral System.String
-    ///    allocation in the case where the string already is in the intern table.
-    ///
-    ///    var str = new InternableString("semicolon;delimited".AsSpan(0, 8));
-    ///    Console.WriteLine(str.ToString()); // prints "semicolon"
-    ///
-    ///    Memory characteristics of the above snippet:
-    ///    - InternableString is allocated on stack only,
-    ///    - The ToString() call does not allocate the string "semicolon" if it already exists in the intern table.
-    ///
-    /// 2) An internable StringBuilder.
-    ///    Compansates for the fact that System.Text.StringBuilder cannot be represented with one ReadOnlySpan&lt;char&gt; and that it does not
-    ///    provide linear time character enumeration. The usage pattern is similar to that of a StringBuilder but it does not allocate O(N) bytes
-    ///    where N is the intermediate string length, but rather allocates only spans describing its constituent pieces. Note that in degenerated
-    ///    cases this may be worse than O(N) so make sure it's used only where it's actually helping.
-    ///
-    ///    var str = new InternableString();
-    ///    str.Append("semicolon");
-    ///    str.Append(";");
-    ///    str.Append("delimited");
-    ///    Console.WriteLine(str.ToString()); // prints "semicolon;delimited"
-    /// 
-    ///    Memory characteristics of the above snippet:
-    ///    - InternableString allocates a List of span descriptors on the GC heap, the size is O(S) where S is the number of spans,
-    ///    - The Append() calls do not allocate memory,
-    ///    - The ToString() call does not allocate the string "semicolon;delimited" if it already exists in the intern table.
+    /// The structure is public because it's exposed via the <see cref="TryInternStringDelegate"/> callback. It's a mutable struct and should
+    /// generally not be used directly from outside of the library.
     /// </remarks>
     public ref struct InternableString
     {

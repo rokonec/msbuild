@@ -7,7 +7,14 @@ using System.Collections.Generic;
 namespace StringTools
 {
     /// <summary>
+    /// A StringBuilder replacement that keeps a list of <see cref="ReadOnlyMemory{T}"/> spans making up the intermediate string rather
+    /// than a copy of its characters. This has positive impact on both memory (no need to allocate space for intermediate strings) and
+    /// time (no need to copy characters to intermediate strings).
     /// </summary>
+    /// <remarks>
+    /// The <see cref="ToString"/> method tries to intern the resulting string without even allocating it if it's already interned.
+    /// Use <see cref="StringTools.GetRopeBuilder"/> to take advantage of pooling to eliminate allocation overhead of this class.
+    /// </remarks>
     public class RopeBuilder : IDisposable
     {
         /// <summary>
@@ -76,12 +83,12 @@ namespace StringTools
         private readonly List<ReadOnlyMemory<char>> _spans;
 
         /// <summary>
-        /// 
+        /// Internal getter to get the list of spans out of the RopeBuilder.
         /// </summary>
         internal List<ReadOnlyMemory<char>> Spans => _spans;
 
         /// <summary>
-        /// Constructs a new RopeBuilder and appends the given string.
+        /// Constructs a new RopeBuilder containing the given string.
         /// </summary>
         /// <param name="str">The string to wrap, must be non-null.</param>
         public RopeBuilder(string str)
@@ -141,7 +148,7 @@ namespace StringTools
             StringTools.ReturnRopeBuilder(this);
         }
 
-        #region Mutating public methods
+        #region Public mutating methods
 
         /// <summary>
         /// Appends a string.

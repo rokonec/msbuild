@@ -29,14 +29,6 @@ namespace StringTools
         /// <param name="internable">The internable describing the string we're looking for.</param>
         /// <param name="cacheHit">true if match found in cache, false otherwise.</param>
         /// <returns>A string matching the given internable.</returns>
-        /// <remarks>
-        /// This method performs two operations on the underlying ConcurrentDictionary on both cache hit and cache miss.
-        /// 1. It checks whether the dictionary has a matching entry. The entry is temporarily removed from the cache so it doesn't
-        ///    race with Scavenge() freeing GC handles. This is the first operation.
-        /// 2a. If there is a matching entry, we extract the string out of it and put it back in the cache (the second operation).
-        /// 2b. If there is an entry but it doesn't match, or there is no entry for the given hash code, we extract the string from
-        ///     the internable, set it on the entry, and add the entry (back) in the cache.
-        /// </remarks>
         public string GetOrCreateEntry(ref InternableString internable, out bool cacheHit)
         {
             int hashCode = GetInternableHashCode(ref internable);
@@ -106,7 +98,7 @@ namespace StringTools
         {
             foreach (KeyValuePair<int, StringWeakHandle> entry in _stringsByHashCode)
             {
-                // We can safely dereference entry.Value as the caller guarantees Scavenge does not run on another thread.
+                // We can safely dereference entry.Value as the caller guarantees that Scavenge runs only on one thread.
                 if (!entry.Value.IsUsed && _stringsByHashCode.TryRemove(entry.Key, out StringWeakHandle removedHandle))
                 {
                     lock (removedHandle)

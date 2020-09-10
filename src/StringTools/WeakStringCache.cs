@@ -115,13 +115,24 @@ namespace StringTools
         /// <summary>
         /// Frees all GC handles and clears the cache.
         /// </summary>
-        public void Dispose()
+        private void DisposeImpl()
         {
             foreach (KeyValuePair<int, StringWeakHandle> entry in _stringsByHashCode)
             {
                 entry.Value.Free();
             }
             _stringsByHashCode.Clear();
+        }
+
+        public void Dispose()
+        {
+            DisposeImpl();
+            GC.SuppressFinalize(this);
+        }
+
+        ~WeakStringCache()
+        {
+            DisposeImpl();
         }
 
         /// <summary>

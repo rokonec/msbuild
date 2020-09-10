@@ -10,7 +10,7 @@ using System.Text;
 namespace StringTools
 {
     /// <summary>
-    /// Interns strings by keeping only weak references so it doesn't keep anything alive.
+    /// Interns strings by holding weak references.
     /// </summary>
     internal sealed class OpportunisticIntern : IDisposable
     {
@@ -54,7 +54,6 @@ namespace StringTools
         {
             if (candidate.Length == 0)
             {
-                // As in the case that a property or itemlist has evaluated to empty.
                 return string.Empty;
             }
 
@@ -77,13 +76,16 @@ namespace StringTools
             return _interner.FormatStatistics();
         }
 
+        /// <summary>
+        /// Releases all strings from the underlying intern table.
+        /// </summary>
         public void Dispose()
         {
             _interner.Dispose();
         }
 
         /// <summary>
-        /// Implements interning based on a WeakStringCache (new implementation).
+        /// Implements interning based on a WeakStringCache.
         /// </summary>
         private class WeakStringCacheInterner : IDisposable
         {
@@ -281,6 +283,9 @@ namespace StringTools
                 }
             }
 
+            /// <summary>
+            /// Releases all strings from the underlying intern table.
+            /// </summary>
             public void Dispose()
             {
                 _weakStringCache.Dispose();

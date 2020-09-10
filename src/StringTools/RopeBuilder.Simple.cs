@@ -10,6 +10,7 @@ using System.Text;
 namespace StringTools
 {
     /// <summary>
+    /// A simple version of RopeBuilder to be used on .NET Framework 3.5. Wraps a <see cref="StringBuilder"/>.
     /// </summary>
     public class RopeBuilder : IDisposable
     {
@@ -63,7 +64,7 @@ namespace StringTools
         internal StringBuilder Builder => _builder;
 
         /// <summary>
-        /// Constructs a new RopeBuilder and appends the given string.
+        /// Constructs a new RopeBuilder containing the given string.
         /// </summary>
         /// <param name="str">The string to wrap, must be non-null.</param>
         public RopeBuilder(string str)
@@ -117,7 +118,7 @@ namespace StringTools
             StringTools.ReturnRopeBuilder(this);
         }
 
-        #region Mutating public methods
+        #region Public mutating methods
 
         /// <summary>
         /// Appends a string.
