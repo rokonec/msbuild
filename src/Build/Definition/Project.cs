@@ -109,6 +109,12 @@ namespace Microsoft.Build.Evaluation
             ProjectCollection = projectCollection;
             implementationInternal = new ProjectLinkInternalNotImplemented();
             implementation = link;
+        }
+
+        static Project()
+        {
+            // One-time initialization of our StringTools host. The Project static constructor is a good place to do this
+            // if we're not running in the context of MSBuild.exe.
             StringToolsHost.Initialize();
         }
 
@@ -269,7 +275,6 @@ namespace Microsoft.Build.Evaluation
             implementation = defaultImplementation;
 
             defaultImplementation.Initialize(globalProperties, toolsVersion, subToolsetVersion, loadSettings, evaluationContext);
-            StringToolsHost.Initialize();
         }
 
         /// <summary>
