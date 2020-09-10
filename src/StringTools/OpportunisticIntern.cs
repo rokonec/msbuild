@@ -12,7 +12,7 @@ namespace StringTools
     /// <summary>
     /// Interns strings by keeping only weak references so it doesn't keep anything alive.
     /// </summary>
-    internal sealed class OpportunisticIntern
+    internal sealed class OpportunisticIntern : IDisposable
     {
         /// <summary>
         /// The singleton instance of OpportunisticIntern.
@@ -35,6 +35,7 @@ namespace StringTools
         /// </summary>
         internal static void ResetForTests()
         {
+            _instance.Dispose();
             _instance = new OpportunisticIntern();
         }
 
@@ -76,10 +77,15 @@ namespace StringTools
             return _interner.FormatStatistics();
         }
 
+        public void Dispose()
+        {
+            _interner.Dispose();
+        }
+
         /// <summary>
         /// Implements interning based on a WeakStringCache (new implementation).
         /// </summary>
-        private class WeakStringCacheInterner
+        private class WeakStringCacheInterner : IDisposable
         {
             /// <summary>
             /// Enumerates the possible interning results.
@@ -273,6 +279,11 @@ namespace StringTools
 
                     return result;
                 }
+            }
+
+            public void Dispose()
+            {
+                _weakStringCache.Dispose();
             }
         }
     }
