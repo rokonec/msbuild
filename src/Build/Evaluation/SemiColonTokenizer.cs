@@ -5,7 +5,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
-using ST = StringTools.StringTools;
+using Microsoft.StringTools;
 
 namespace Microsoft.Build.Evaluation
 {
@@ -148,7 +148,7 @@ namespace Microsoft.Build.Evaluation
                 }
                 if (startIndex < endIndex)
                 {
-                    return ST.TryIntern(_expression.AsSpan(startIndex, endIndex - startIndex));
+                    return Strings.TryIntern(_expression.AsSpan(startIndex, endIndex - startIndex));
                 }
                 return null;
             }

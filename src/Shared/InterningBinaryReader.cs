@@ -8,7 +8,7 @@ using System.Diagnostics;
 
 using ErrorUtilities = Microsoft.Build.Shared.ErrorUtilities;
 
-using ST = StringTools.StringTools;
+using Microsoft.StringTools;
 
 namespace Microsoft.Build
 {
@@ -130,7 +130,7 @@ namespace Microsoft.Build
                     if (currPos == 0 && n == stringLength)
                     {
                         charsRead = _decoder.GetChars(rawBuffer, rawPosition, n, charBuffer, 0);
-                        return ST.TryIntern(charBuffer.AsSpan(0, charsRead));
+                        return Strings.TryIntern(charBuffer.AsSpan(0, charsRead));
                     }
 
                     resultBuffer ??= new char[stringLength]; // Actual string length in chars may be smaller.
@@ -140,7 +140,7 @@ namespace Microsoft.Build
                 }
                 while (currPos < stringLength);
 
-                return ST.TryIntern(resultBuffer.AsSpan(0, charsRead));
+                return Strings.TryIntern(resultBuffer.AsSpan(0, charsRead));
             }
             catch (Exception e)
             {

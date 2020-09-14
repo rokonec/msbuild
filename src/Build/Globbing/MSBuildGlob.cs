@@ -7,8 +7,7 @@ using System.IO;
 using System.Text.RegularExpressions;
 using Microsoft.Build.Collections;
 using Microsoft.Build.Shared;
-
-using ST = StringTools.StringTools;
+using Microsoft.StringTools;
 
 namespace Microsoft.Build.Globbing
 {
@@ -178,7 +177,7 @@ namespace Microsoft.Build.Globbing
                 globRoot = Directory.GetCurrentDirectory();
             }
 
-            globRoot = ST.TryIntern(FileUtilities.NormalizePath(globRoot).WithTrailingSlash());
+            globRoot = Strings.TryIntern(FileUtilities.NormalizePath(globRoot).WithTrailingSlash());
 
             var lazyState = new Lazy<GlobState>(() =>
             {

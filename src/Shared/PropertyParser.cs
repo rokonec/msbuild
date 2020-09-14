@@ -5,9 +5,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Shared;
-
-using StringTools;
-using ST = StringTools.StringTools;
+using Microsoft.StringTools;
 
 #if BUILD_ENGINE
 namespace Microsoft.Build.BackEnd
@@ -164,7 +162,7 @@ namespace Microsoft.Build.Tasks
                 // needs to pass onto the engine.
                 log?.LogMessageFromText(parameterName, MessageImportance.Low);
 
-                using SpanBasedStringBuilder stringBuilder = ST.GetSpanBasedStringBuilder();
+                using SpanBasedStringBuilder stringBuilder = Strings.GetSpanBasedStringBuilder();
                 foreach (PropertyNameValuePair propertyNameValuePair in finalPropertiesList)
                 {
                     stringBuilder.Clear();

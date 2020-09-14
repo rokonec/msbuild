@@ -12,9 +12,6 @@ using System.Linq;
 using System.Text;
 using System.Xml;
 
-using StringTools;
-using ST = StringTools.StringTools;
-
 using Microsoft.Build.BackEnd.SdkResolution;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Shared;
@@ -30,6 +27,8 @@ using ILoggingService = Microsoft.Build.BackEnd.Logging.ILoggingService;
 using FrameworkName = System.Runtime.Versioning.FrameworkName;
 using Microsoft.Build.Execution;
 using Microsoft.Build.Utilities;
+
+using Microsoft.StringTools;
 
 namespace Microsoft.Build.Construction
 {
@@ -1100,7 +1099,7 @@ namespace Microsoft.Build.Construction
         /// </summary>
         private static string GetPropertiesAttributeForDirectMSBuildTask(ProjectConfigurationInSolution projectConfiguration)
         {
-            using SpanBasedStringBuilder directProjectProperties = ST.GetSpanBasedStringBuilder();
+            using SpanBasedStringBuilder directProjectProperties = Strings.GetSpanBasedStringBuilder();
             directProjectProperties.Append(GetConfigurationAndPlatformPropertiesString(projectConfiguration));
             directProjectProperties.Append(";");
             directProjectProperties.Append(SolutionProperties);
@@ -1350,7 +1349,7 @@ namespace Microsoft.Build.Construction
         private void AddMetaprojectBuildTask(ProjectInSolution project, ProjectTargetInstance target, string targetToBuild, string outputItem)
         {
             ProjectTaskInstance task;
-            using (SpanBasedStringBuilder condition = ST.GetSpanBasedStringBuilder())
+            using (SpanBasedStringBuilder condition = Strings.GetSpanBasedStringBuilder())
             {
                 condition.Append("'%(ProjectReference.Identity)' == '");
                 condition.Append(GetMetaprojectName(project));

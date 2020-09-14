@@ -7,7 +7,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 
-namespace StringTools
+namespace Microsoft.StringTools
 {
     /// <summary>
     /// Implements the WeakStringCache functionality on modern .NET versions where ConcurrentDictionary is available.

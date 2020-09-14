@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace StringTools
+namespace Microsoft.StringTools
 {
     /// <summary>
     /// A StringBuilder replacement that keeps a list of <see cref="ReadOnlyMemory{T}"/> spans making up the intermediate string rather
@@ -13,7 +13,7 @@ namespace StringTools
     /// </summary>
     /// <remarks>
     /// The <see cref="ToString"/> method tries to intern the resulting string without even allocating it if it's already interned.
-    /// Use <see cref="StringTools.GetSpanBasedStringBuilder"/> to take advantage of pooling to eliminate allocation overhead of this class.
+    /// Use <see cref="Strings.GetSpanBasedStringBuilder"/> to take advantage of pooling to eliminate allocation overhead of this class.
     /// </remarks>
     public class SpanBasedStringBuilder : IDisposable
     {
@@ -145,7 +145,7 @@ namespace StringTools
         /// </summary>
         public void Dispose()
         {
-            StringTools.ReturnSpanBasedStringBuilder(this);
+            Strings.ReturnSpanBasedStringBuilder(this);
         }
 
         #region Public mutating methods

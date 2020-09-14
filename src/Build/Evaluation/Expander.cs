@@ -28,8 +28,7 @@ using ReservedPropertyNames = Microsoft.Build.Internal.ReservedPropertyNames;
 using TaskItem = Microsoft.Build.Execution.ProjectItemInstance.TaskItem;
 using TaskItemFactory = Microsoft.Build.Execution.ProjectItemInstance.TaskItem.TaskItemFactory;
 
-using StringTools;
-using ST = StringTools.StringTools;
+using Microsoft.StringTools;
 
 namespace Microsoft.Build.Evaluation
 {
@@ -645,7 +644,7 @@ namespace Microsoft.Build.Evaluation
 
             List<string> arguments = new List<string>();
 
-            SpanBasedStringBuilder argumentBuilder = ST.GetSpanBasedStringBuilder();
+            SpanBasedStringBuilder argumentBuilder = Strings.GetSpanBasedStringBuilder();
             int? argumentStartIndex = null;
 
             try
@@ -795,7 +794,7 @@ namespace Microsoft.Build.Evaluation
                         }
 
                         // otherwise, run the more complex Regex to find item metadata references not contained in transforms
-                        using SpanBasedStringBuilder finalResultBuilder = ST.GetSpanBasedStringBuilder();
+                        using SpanBasedStringBuilder finalResultBuilder = Strings.GetSpanBasedStringBuilder();
 
                         int start = 0;
                         MetadataMatchEvaluator matchEvaluator = new MetadataMatchEvaluator(metadata, options);
@@ -1171,7 +1170,7 @@ namespace Microsoft.Build.Evaluation
 
                     // Initialize our output string to empty string.
                     // This method is called very often - of the order of 3,000 times per project.
-                    using SpanBasedStringBuilder result = ST.GetSpanBasedStringBuilder();
+                    using SpanBasedStringBuilder result = Strings.GetSpanBasedStringBuilder();
 
                     // Append our collected results
                     if (results != null)
@@ -1342,7 +1341,7 @@ namespace Microsoft.Build.Evaluation
                         // Key and Value are converted to string and escaped
                         if (dictionary.Count > 0)
                         {
-                            using SpanBasedStringBuilder builder = ST.GetSpanBasedStringBuilder();
+                            using SpanBasedStringBuilder builder = Strings.GetSpanBasedStringBuilder();
 
                             foreach (DictionaryEntry entry in dictionary)
                             {
@@ -1368,7 +1367,7 @@ namespace Microsoft.Build.Evaluation
                     {
                         // If the return is enumerable, then we'll convert to semi-colon delimited elements
                         // each of which must be converted, so we'll recurse for each element
-                        using SpanBasedStringBuilder builder = ST.GetSpanBasedStringBuilder();
+                        using SpanBasedStringBuilder builder = Strings.GetSpanBasedStringBuilder();
 
                         foreach (object element in enumerable)
                         {
@@ -1789,7 +1788,7 @@ namespace Microsoft.Build.Evaluation
                     // a scalar and then create a single item. Basically we need this
                     // to be able to convert item lists with user specified separators into properties.
                     string expandedItemVector;
-                    using SpanBasedStringBuilder builder = ST.GetSpanBasedStringBuilder();
+                    using SpanBasedStringBuilder builder = Strings.GetSpanBasedStringBuilder();
                     brokeEarlyNonEmpty = ExpandExpressionCaptureIntoStringBuilder(expander, expressionCapture, items, elementLocation, builder, options);
 
                     if (brokeEarlyNonEmpty)
@@ -1969,7 +1968,7 @@ namespace Microsoft.Build.Evaluation
                     return expression;
                 }
 
-                using SpanBasedStringBuilder builder = ST.GetSpanBasedStringBuilder();
+                using SpanBasedStringBuilder builder = Strings.GetSpanBasedStringBuilder();
                 // As we walk through the matches, we need to copy out the original parts of the string which
                 // are not covered by the match.  This preserves original behavior which did not trim whitespace
                 // from between separators.

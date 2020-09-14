@@ -13,8 +13,6 @@ using Microsoft.Build.Evaluation;
 using Microsoft.Build.Construction;
 using Microsoft.Build.BackEnd;
 
-using ST = StringTools.StringTools;
-
 using ILoggingService = Microsoft.Build.BackEnd.Logging.ILoggingService;
 using InvalidProjectFileException = Microsoft.Build.Exceptions.InvalidProjectFileException;
 using TaskEngineAssemblyResolver = Microsoft.Build.BackEnd.Logging.TaskEngineAssemblyResolver;
@@ -22,6 +20,8 @@ using ProjectXmlUtilities = Microsoft.Build.Internal.ProjectXmlUtilities;
 using TargetLoggingContext = Microsoft.Build.BackEnd.Logging.TargetLoggingContext;
 using System.Collections.ObjectModel;
 using Microsoft.Build.Shared.FileSystem;
+
+using Microsoft.StringTools;
 
 namespace Microsoft.Build.Execution
 {
@@ -310,7 +310,7 @@ namespace Microsoft.Build.Execution
 
                 if (assemblyFile != null && !Path.IsPathRooted(assemblyFile))
                 {
-                    assemblyFile = ST.TryIntern(Path.Combine(directoryOfImportingFile, assemblyFile));
+                    assemblyFile = Strings.TryIntern(Path.Combine(directoryOfImportingFile, assemblyFile));
                 }
 
                 if (String.Equals(taskFactory, RegisteredTaskRecord.CodeTaskFactory, StringComparison.OrdinalIgnoreCase) || String.Equals(taskFactory, RegisteredTaskRecord.XamlTaskFactory, StringComparison.OrdinalIgnoreCase))

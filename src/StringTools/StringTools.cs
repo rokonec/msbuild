@@ -10,7 +10,7 @@ using System.Text;
 using Microsoft.Extensions.ObjectPool;
 #endif
 
-namespace StringTools
+namespace Microsoft.StringTools
 {
     /// <summary>
     /// A callback type to register with the library. The library will invoke this callback in registration order until
@@ -21,7 +21,8 @@ namespace StringTools
     /// <returns>True if the <paramref name="internableString" /> was handled by the callback.</returns>
     public delegate bool TryInternStringDelegate(ref InternableString internableString, out string result);
 
-    public static class StringTools
+    public static class Strings
+
     {
 #if !NET35
         /// <summary>
@@ -176,7 +177,7 @@ namespace StringTools
         public static string CreateDiagnosticReport()
         {
             StringBuilder callbackReport = new StringBuilder();
-            callbackReport.AppendFormat("{0} with {1} string interning callbacks registered", nameof(StringTools), s_internStringCallbacks.Length);
+            callbackReport.AppendFormat("{0} with {1} string interning callbacks registered", nameof(Strings), s_internStringCallbacks.Length);
             callbackReport.AppendLine();
 
             return callbackReport.ToString() + OpportunisticIntern.Instance.FormatStatistics();

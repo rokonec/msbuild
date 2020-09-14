@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace StringTools
+namespace Microsoft.StringTools
 {
     /// <summary>
     /// Implements the WeakStringCache functionality on .NET Framework 3.5 where ConcurrentDictionary is not available.

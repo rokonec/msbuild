@@ -14,15 +14,13 @@ using Shouldly;
 using Xunit;
 
 #if NET35_UNITTEST
-using StringToolsNet35::StringTools;
-using ST = StringToolsNet35::StringTools.StringTools;
+using StringToolsNet35::Microsoft.StringTools;
 using Shouldly.Configuration;
 #else
-using StringTools;
-using ST = StringTools.StringTools;
+using Microsoft.StringTools;
 #endif
 
-namespace StringTools.Tests
+namespace Microsoft.StringTools.Tests
 {
     public class StringTools_Tests
     {
@@ -31,7 +29,7 @@ namespace StringTools.Tests
 
         public StringTools_Tests()
         {
-            ST.ResetForTests();
+            Strings.ResetForTests();
         }
 
         [Fact]
@@ -56,7 +54,7 @@ namespace StringTools.Tests
                 return false;
             };
 
-            ST.RegisterStringInterningCallback(callback);
+            Strings.RegisterStringInterningCallback(callback);
 
             InternableString internedString = new InternableString(new string(HardcodedInternedString.ToCharArray()));
             internedString.ToString().ShouldBeSameAs(HardcodedInternedString);
@@ -65,7 +63,7 @@ namespace StringTools.Tests
             nonInternedString.ToString().ShouldBe(HardcodedNonInternedString);
             nonInternedString.ToString().ShouldNotBeSameAs(HardcodedNonInternedString);
 
-            ST.UnregisterStringInterningCallback(callback);
+            Strings.UnregisterStringInterningCallback(callback);
 
             callbackCallCounter.ShouldBe(3);
         }
@@ -82,8 +80,8 @@ namespace StringTools.Tests
                 return false;
             };
 
-            ST.RegisterStringInterningCallback(callback);
-            ST.UnregisterStringInterningCallback(callback);
+            Strings.RegisterStringInterningCallback(callback);
+            Strings.UnregisterStringInterningCallback(callback);
 
             InternableString internedString = new InternableString(new string(HardcodedInternedString.ToCharArray()));
             internedString.ToString().ShouldBe(HardcodedInternedString);
@@ -97,10 +95,10 @@ namespace StringTools.Tests
         {
             string statisticsNotEnabledString = "EnableStatisticsGathering() has not been called";
 
-            ST.CreateDiagnosticReport().ShouldContain(statisticsNotEnabledString);
+            Strings.CreateDiagnosticReport().ShouldContain(statisticsNotEnabledString);
 
-            ST.EnableDiagnostics();
-            string report = ST.CreateDiagnosticReport();
+            Strings.EnableDiagnostics();
+            string report = Strings.CreateDiagnosticReport();
 
             report.ShouldNotContain(statisticsNotEnabledString);
             report.ShouldContain("Eliminated Strings");

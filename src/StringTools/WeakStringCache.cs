@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
-namespace StringTools
+namespace Microsoft.StringTools
 {
     /// <summary>
     /// A cache of weak GC handles pointing to strings. Weak GC handles are functionally equivalent to WeakReference's but have less overhead

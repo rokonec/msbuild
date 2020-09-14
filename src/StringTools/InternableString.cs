@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace StringTools
+namespace Microsoft.StringTools
 {
     /// <summary>
     /// Represents a string that can be converted to System.String with interning, i.e. by returning an existing string if it has been seen before

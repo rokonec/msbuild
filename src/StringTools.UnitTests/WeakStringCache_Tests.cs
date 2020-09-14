@@ -14,10 +14,10 @@ using Shouldly;
 using Xunit;
 
 #if NET35_UNITTEST
-using StringToolsNet35::StringTools;
+using StringToolsNet35::Microsoft.StringTools;
 #endif
 
-namespace StringTools.Tests
+namespace Microsoft.StringTools.Tests
 {
     public class WeakStringCache_Tests : IDisposable
     {

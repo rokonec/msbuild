@@ -29,6 +29,8 @@ using Microsoft.Build.Shared;
 using ForwardingLoggerRecord = Microsoft.Build.Logging.ForwardingLoggerRecord;
 using LoggerDescription = Microsoft.Build.Logging.LoggerDescription;
 
+using Microsoft.StringTools;
+
 namespace Microsoft.Build.Execution
 {
     /// <summary>
@@ -405,7 +407,7 @@ namespace Microsoft.Build.Execution
 
                 if (BuildParameters.DumpOpportunisticInternStats)
                 {
-                    StringTools.StringTools.EnableDiagnostics();
+                    Strings.EnableDiagnostics();
                 }
 
                 _overallBuildSuccess = true;
@@ -820,7 +822,7 @@ namespace Microsoft.Build.Execution
 
                     if (BuildParameters.DumpOpportunisticInternStats)
                     {
-                        Console.WriteLine(StringTools.StringTools.CreateDiagnosticReport());
+                        Console.WriteLine(Strings.CreateDiagnosticReport());
                     }
                 }
             }

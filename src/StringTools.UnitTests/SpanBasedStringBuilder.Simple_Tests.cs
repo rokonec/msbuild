@@ -11,10 +11,10 @@ using Shouldly;
 using Xunit;
 
 #if NET35_UNITTEST
-using StringToolsNet35::StringTools;
+using StringToolsNet35::Microsoft.StringTools;
 #endif
 
-namespace StringTools.Tests
+namespace Microsoft.StringTools.Tests
 {
     /// <summary>
     /// These tests are running against the .NET 3.5 implementation in src\MSBuildTaskHost\InternableString.Simple.cs

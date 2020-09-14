@@ -3,7 +3,7 @@
 
 using System.Collections.Generic;
 
-namespace StringTools.Tests
+namespace Microsoft.StringTools.Tests
 {
     public static class InterningTestData
     {

@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using Shouldly;
 using Xunit;
 
-namespace StringTools.Tests
+namespace Microsoft.StringTools.Tests
 {
     public class SpanBasedStringBuilder_Tests
     {

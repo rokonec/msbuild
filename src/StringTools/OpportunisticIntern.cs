@@ -7,7 +7,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 
-namespace StringTools
+namespace Microsoft.StringTools
 {
     /// <summary>
     /// Interns strings by holding weak references.
@@ -226,7 +226,7 @@ namespace StringTools
             private InternResult TryIntern(ref InternableString candidate, out string interned)
             {
                 // First, try the interning callbacks.
-                if (StringTools.CallStringInterningCallbacks(ref candidate, out interned))
+                if (Strings.CallStringInterningCallbacks(ref candidate, out interned))
                 {
                     // Either matched a hardcoded string or is explicitly not to be interned.
                     if (interned != null)

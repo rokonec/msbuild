@@ -3,9 +3,8 @@
 
 using System.Diagnostics;
 
-using StringTools;
-
 using Microsoft.Build.Shared;
+using Microsoft.StringTools;
 
 namespace Microsoft.Build
 {
@@ -18,7 +17,7 @@ namespace Microsoft.Build
             if (!s_isInitialized)
             {
                 // RegisterStringInterningCallback is thread-safe and idempotent so no need to worry about potentially getting here multiple times.
-                StringTools.StringTools.RegisterStringInterningCallback(TryMatchHardcodedStrings);
+                Strings.RegisterStringInterningCallback(TryMatchHardcodedStrings);
                 s_isInitialized = true;
             }
         }

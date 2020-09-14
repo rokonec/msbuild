@@ -7,7 +7,7 @@ using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Text;
 
-namespace StringTools
+namespace Microsoft.StringTools
 {
     /// <summary>
     /// A simple version of SpanBasedStringBuilder to be used on .NET Framework 3.5. Wraps a <see cref="StringBuilder"/>.
@@ -115,7 +115,7 @@ namespace StringTools
         /// </summary>
         public void Dispose()
         {
-            StringTools.ReturnSpanBasedStringBuilder(this);
+            Strings.ReturnSpanBasedStringBuilder(this);
         }
 
         #region Public mutating methods
