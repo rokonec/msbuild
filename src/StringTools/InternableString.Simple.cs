@@ -108,9 +108,9 @@ namespace StringTools
         }
 
         /// <summary>
-        /// Constructs a new InternableString wrapping the given RopeBuilder.
+        /// Constructs a new InternableString wrapping the given SpanBasedStringBuilder.
         /// </summary>
-        internal InternableString(RopeBuilder builder)
+        internal InternableString(SpanBasedStringBuilder builder)
         {
             _builder = builder.Builder;
             _firstString = null;

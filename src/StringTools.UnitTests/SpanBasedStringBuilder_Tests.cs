@@ -8,30 +8,30 @@ using Xunit;
 
 namespace StringTools.Tests
 {
-    public class RopeBuilder_Tests
+    public class SpanBasedStringBuilder_Tests
     {
-        private RopeBuilder MakeRopeBuilder(InterningTestData.TestDatum datum, bool appendSubStrings = false)
+        private SpanBasedStringBuilder MakeSpanBasedStringBuilder(InterningTestData.TestDatum datum, bool appendSubStrings = false)
         {
             bool wrapFirstFragment = datum.Fragments.Length > 0 && datum.Fragments[0] != null;
 
-            RopeBuilder ropeBuilder = wrapFirstFragment
-                ? new RopeBuilder(datum.Fragments[0])
-                : new RopeBuilder();
+            SpanBasedStringBuilder stringBuilder = wrapFirstFragment
+                ? new SpanBasedStringBuilder(datum.Fragments[0])
+                : new SpanBasedStringBuilder();
 
             for (int i = 1; i < datum.Fragments.Length; i++)
             {
                 if (appendSubStrings)
                 {
                     int index = datum.Fragments[i].Length / 2;
-                    ropeBuilder.Append(datum.Fragments[i], 0, index);
-                    ropeBuilder.Append(datum.Fragments[i], index, datum.Fragments[i].Length - index);
+                    stringBuilder.Append(datum.Fragments[i], 0, index);
+                    stringBuilder.Append(datum.Fragments[i], index, datum.Fragments[i].Length - index);
                 }
                 else
                 {
-                    ropeBuilder.Append(datum.Fragments[i]);
+                    stringBuilder.Append(datum.Fragments[i]);
                 }
             }
-            return ropeBuilder;
+            return stringBuilder;
         }
 
         public static IEnumerable<object[]> TestData => InterningTestData.TestData;
@@ -41,16 +41,16 @@ namespace StringTools.Tests
         [MemberData(nameof(TestData))]
         public void LengthReturnsLength(InterningTestData.TestDatum datum)
         {
-            MakeRopeBuilder(datum).Length.ShouldBe(datum.Length);
+            MakeSpanBasedStringBuilder(datum).Length.ShouldBe(datum.Length);
         }
 
         [Theory]
         [MemberData(nameof(TestData))]
         public void EnumeratorEnumeratesCharacters(InterningTestData.TestDatum datum)
         {
-            RopeBuilder ropeBuilder = MakeRopeBuilder(datum);
+            SpanBasedStringBuilder stringBuilder = MakeSpanBasedStringBuilder(datum);
             int index = 0;
-            foreach (char ch in ropeBuilder)
+            foreach (char ch in stringBuilder)
             {
                 ch.ShouldBe(datum[index]);
                 index++;
@@ -61,7 +61,7 @@ namespace StringTools.Tests
         [MemberData(nameof(TestData))]
         public void IndexerReturnsCharacters(InterningTestData.TestDatum datum)
         {
-            InternableString internableString = new InternableString(MakeRopeBuilder(datum));
+            InternableString internableString = new InternableString(MakeSpanBasedStringBuilder(datum));
             int length = datum.Length;
             for (int index = 0; index < length; index++)
             {
@@ -73,7 +73,7 @@ namespace StringTools.Tests
         [MemberData(nameof(TestData))]
         public void StartsWithStringByOrdinalComparisonReturnsExpectedValue(InterningTestData.TestDatum datum)
         {
-            InternableString internableString = new InternableString(MakeRopeBuilder(datum));
+            InternableString internableString = new InternableString(MakeSpanBasedStringBuilder(datum));
             internableString.StartsWithStringByOrdinalComparison(string.Empty).ShouldBeTrue();
 
             string substr = datum.Fragments[0] ?? string.Empty;
@@ -106,53 +106,53 @@ namespace StringTools.Tests
         [MemberData(nameof(TestData))]
         public void AppendAppendsString(InterningTestData.TestDatum datum)
         {
-            RopeBuilder ropeBuilder = MakeRopeBuilder(datum, false);
-            new InternableString(ropeBuilder).ExpensiveConvertToString().ShouldBe(datum.ToString());
+            SpanBasedStringBuilder stringBuilder = MakeSpanBasedStringBuilder(datum, false);
+            new InternableString(stringBuilder).ExpensiveConvertToString().ShouldBe(datum.ToString());
         }
 
         [Theory]
         [MemberData(nameof(TestData))]
         public void AppendAppendsSubstring(InterningTestData.TestDatum datum)
         {
-            RopeBuilder ropeBuilder = MakeRopeBuilder(datum, true);
-            new InternableString(ropeBuilder).ExpensiveConvertToString().ShouldBe(datum.ToString());
+            SpanBasedStringBuilder stringBuilder = MakeSpanBasedStringBuilder(datum, true);
+            new InternableString(stringBuilder).ExpensiveConvertToString().ShouldBe(datum.ToString());
         }
 
         [Theory]
         [MemberData(nameof(TestDataForTrim))]
         public void TrimStartRemovesLeadingWhiteSpace(InterningTestData.TestDatum datum)
         {
-            RopeBuilder ropeBuilder = MakeRopeBuilder(datum);
-            ropeBuilder.TrimStart();
-            new InternableString(ropeBuilder).ExpensiveConvertToString().ShouldBe(datum.ToString().TrimStart());
+            SpanBasedStringBuilder stringBuilder = MakeSpanBasedStringBuilder(datum);
+            stringBuilder.TrimStart();
+            new InternableString(stringBuilder).ExpensiveConvertToString().ShouldBe(datum.ToString().TrimStart());
         }
 
         [Theory]
         [MemberData(nameof(TestDataForTrim))]
         public void TrimEndRemovesTrailingWhiteSpace(InterningTestData.TestDatum datum)
         {
-            RopeBuilder ropeBuilder = MakeRopeBuilder(datum);
-            ropeBuilder.TrimEnd();
-            new InternableString(ropeBuilder).ExpensiveConvertToString().ShouldBe(datum.ToString().TrimEnd());
+            SpanBasedStringBuilder stringBuilder = MakeSpanBasedStringBuilder(datum);
+            stringBuilder.TrimEnd();
+            new InternableString(stringBuilder).ExpensiveConvertToString().ShouldBe(datum.ToString().TrimEnd());
         }
 
         [Theory]
         [MemberData(nameof(TestDataForTrim))]
         public void TrimRemovesLeadingAndTrailingWhiteSpace(InterningTestData.TestDatum datum)
         {
-            RopeBuilder ropeBuilder = MakeRopeBuilder(datum);
-            ropeBuilder.Trim();
-            new InternableString(ropeBuilder).ExpensiveConvertToString().ShouldBe(datum.ToString().Trim());
+            SpanBasedStringBuilder stringBuilder = MakeSpanBasedStringBuilder(datum);
+            stringBuilder.Trim();
+            new InternableString(stringBuilder).ExpensiveConvertToString().ShouldBe(datum.ToString().Trim());
         }
 
         [Theory]
         [MemberData(nameof(TestData))]
         public void ClearRemovesAllCharacters(InterningTestData.TestDatum datum)
         {
-            RopeBuilder ropeBuilder = MakeRopeBuilder(datum);
-            ropeBuilder.Clear();
-            ropeBuilder.Length.ShouldBe(0);
-            ropeBuilder.GetEnumerator().MoveNext().ShouldBeFalse();
+            SpanBasedStringBuilder stringBuilder = MakeSpanBasedStringBuilder(datum);
+            stringBuilder.Clear();
+            stringBuilder.Length.ShouldBe(0);
+            stringBuilder.GetEnumerator().MoveNext().ShouldBeFalse();
         }
     }
 }

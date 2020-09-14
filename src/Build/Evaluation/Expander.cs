@@ -593,7 +593,7 @@ namespace Microsoft.Build.Evaluation
         /// Add the argument in the StringBuilder to the arguments list, handling nulls
         /// appropriately.
         /// </summary>
-        private static void AddArgument(List<string> arguments, RopeBuilder argumentBuilder)
+        private static void AddArgument(List<string> arguments, SpanBasedStringBuilder argumentBuilder)
         {
             // we reached the end of an argument, add the builder's final result
             // to our arguments.
@@ -645,7 +645,7 @@ namespace Microsoft.Build.Evaluation
 
             List<string> arguments = new List<string>();
 
-            RopeBuilder argumentBuilder = ST.GetRopeBuilder();
+            SpanBasedStringBuilder argumentBuilder = ST.GetSpanBasedStringBuilder();
             int? argumentStartIndex = null;
 
             try
@@ -795,7 +795,7 @@ namespace Microsoft.Build.Evaluation
                         }
 
                         // otherwise, run the more complex Regex to find item metadata references not contained in transforms
-                        using RopeBuilder finalResultBuilder = ST.GetRopeBuilder();
+                        using SpanBasedStringBuilder finalResultBuilder = ST.GetSpanBasedStringBuilder();
 
                         int start = 0;
                         MetadataMatchEvaluator matchEvaluator = new MetadataMatchEvaluator(metadata, options);
@@ -1171,7 +1171,7 @@ namespace Microsoft.Build.Evaluation
 
                     // Initialize our output string to empty string.
                     // This method is called very often - of the order of 3,000 times per project.
-                    using RopeBuilder result = ST.GetRopeBuilder();
+                    using SpanBasedStringBuilder result = ST.GetSpanBasedStringBuilder();
 
                     // Append our collected results
                     if (results != null)
@@ -1342,7 +1342,7 @@ namespace Microsoft.Build.Evaluation
                         // Key and Value are converted to string and escaped
                         if (dictionary.Count > 0)
                         {
-                            using RopeBuilder builder = ST.GetRopeBuilder();
+                            using SpanBasedStringBuilder builder = ST.GetSpanBasedStringBuilder();
 
                             foreach (DictionaryEntry entry in dictionary)
                             {
@@ -1368,7 +1368,7 @@ namespace Microsoft.Build.Evaluation
                     {
                         // If the return is enumerable, then we'll convert to semi-colon delimited elements
                         // each of which must be converted, so we'll recurse for each element
-                        using RopeBuilder builder = ST.GetRopeBuilder();
+                        using SpanBasedStringBuilder builder = ST.GetSpanBasedStringBuilder();
 
                         foreach (object element in enumerable)
                         {
@@ -1789,8 +1789,8 @@ namespace Microsoft.Build.Evaluation
                     // a scalar and then create a single item. Basically we need this
                     // to be able to convert item lists with user specified separators into properties.
                     string expandedItemVector;
-                    using RopeBuilder builder = ST.GetRopeBuilder();
-                    brokeEarlyNonEmpty = ExpandExpressionCaptureIntoRopeBuilder(expander, expressionCapture, items, elementLocation, builder, options);
+                    using SpanBasedStringBuilder builder = ST.GetSpanBasedStringBuilder();
+                    brokeEarlyNonEmpty = ExpandExpressionCaptureIntoStringBuilder(expander, expressionCapture, items, elementLocation, builder, options);
 
                     if (brokeEarlyNonEmpty)
                     {
@@ -1969,7 +1969,7 @@ namespace Microsoft.Build.Evaluation
                     return expression;
                 }
 
-                using RopeBuilder builder = ST.GetRopeBuilder();
+                using SpanBasedStringBuilder builder = ST.GetSpanBasedStringBuilder();
                 // As we walk through the matches, we need to copy out the original parts of the string which
                 // are not covered by the match.  This preserves original behavior which did not trim whitespace
                 // from between separators.
@@ -1986,7 +1986,7 @@ namespace Microsoft.Build.Evaluation
                         builder.Append(expression, lastStringIndex, matches[i].Index - lastStringIndex);
                     }
 
-                    bool brokeEarlyNonEmpty = ExpandExpressionCaptureIntoRopeBuilder(expander, matches[i], items, elementLocation, builder, options);
+                    bool brokeEarlyNonEmpty = ExpandExpressionCaptureIntoStringBuilder(expander, matches[i], items, elementLocation, builder, options);
 
                     if (brokeEarlyNonEmpty)
                     {
@@ -2049,12 +2049,12 @@ namespace Microsoft.Build.Evaluation
             /// Returns true if ExpanderOptions.BreakOnNotEmpty was passed, expression was going to be non-empty, and so it broke out early.
             /// </summary>
             /// <typeparam name="S">Type of source items</typeparam>
-            private static bool ExpandExpressionCaptureIntoRopeBuilder<S>(
+            private static bool ExpandExpressionCaptureIntoStringBuilder<S>(
                 Expander<P, I> expander,
                 ExpressionShredder.ItemExpressionCapture capture,
                 IItemProvider<S> evaluatedItems,
                 IElementLocation elementLocation,
-                RopeBuilder builder,
+                SpanBasedStringBuilder builder,
                 ExpanderOptions options
                 )
                 where S : class, IItem

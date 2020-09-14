@@ -25,9 +25,9 @@ namespace StringTools
     {
 #if !NET35
         /// <summary>
-        /// IPooledObjectPolicy used by <cref see="s_ropeBuilderPool"/>.
+        /// IPooledObjectPolicy used by <cref see="s_stringBuilderPool"/>.
         /// </summary>
-        private class PooledObjectPolicy : IPooledObjectPolicy<RopeBuilder>
+        private class PooledObjectPolicy : IPooledObjectPolicy<SpanBasedStringBuilder>
         {
             /// <summary>
             /// No need to retain excessively long builders forever.
@@ -35,21 +35,21 @@ namespace StringTools
             private const int MAX_RETAINED_BUILDER_CAPACITY = 1000;
 
             /// <summary>
-            /// Creates a new RopeBuilder with the default capacity.
+            /// Creates a new SpanBasedStringBuilder with the default capacity.
             /// </summary>
-            public RopeBuilder Create()
+            public SpanBasedStringBuilder Create()
             {
-                return new RopeBuilder();
+                return new SpanBasedStringBuilder();
             }
 
             /// <summary>
             /// Returns a builder to the pool unless it's excessively long.
             /// </summary>
-            public bool Return(RopeBuilder ropeBuilder)
+            public bool Return(SpanBasedStringBuilder stringBuilder)
             {
-                if (ropeBuilder.Capacity <= MAX_RETAINED_BUILDER_CAPACITY)
+                if (stringBuilder.Capacity <= MAX_RETAINED_BUILDER_CAPACITY)
                 {
-                    ropeBuilder.Clear();
+                    stringBuilder.Clear();
                     return true;
                 }
                 return false;
@@ -57,10 +57,10 @@ namespace StringTools
         }
 
         /// <summary>
-        /// A pool of RopeBuilders as we don't want to be allocating every time a new one is requested.
+        /// A pool of SpanBasedStringBuilders as we don't want to be allocating every time a new one is requested.
         /// </summary>
-        private static DefaultObjectPool<RopeBuilder> s_ropeBuilderPool =
-            new DefaultObjectPool<RopeBuilder>(new PooledObjectPolicy(), Environment.ProcessorCount);
+        private static DefaultObjectPool<SpanBasedStringBuilder> s_stringBuilderPool =
+            new DefaultObjectPool<SpanBasedStringBuilder>(new PooledObjectPolicy(), Environment.ProcessorCount);
 #endif
 
         /// <summary>
@@ -111,18 +111,18 @@ namespace StringTools
 #endif
 
         /// <summary>
-        /// Returns a new or recycled <see cref="RopeBuilder"/>.
+        /// Returns a new or recycled <see cref="SpanBasedStringBuilder"/>.
         /// </summary>
-        /// <returns>The RopeBuilder.</returns>
+        /// <returns>The SpanBasedStringBuilder.</returns>
         /// <remarks>
         /// Call <see cref="IDisposable.Dispose"/> on the returned instance to recycle it.
         /// </remarks>
-        public static RopeBuilder GetRopeBuilder()
+        public static SpanBasedStringBuilder GetSpanBasedStringBuilder()
         {
 #if NET35
-            return new RopeBuilder();
+            return new SpanBasedStringBuilder();
 #else
-            return s_ropeBuilderPool.Get();
+            return s_stringBuilderPool.Get();
 #endif
         }
 
@@ -185,17 +185,17 @@ namespace StringTools
         #endregion
 
         /// <summary>
-        /// Returns a <see cref="RopeBuilder"/> instance back to the pool if possible.
+        /// Returns a <see cref="SpanBasedStringBuilder"/> instance back to the pool if possible.
         /// </summary>
-        /// <param name="ropeBuilder">The instance to return.</param>
-        internal static void ReturnRopeBuilder(RopeBuilder ropeBuilder)
+        /// <param name="stringBuilder">The instance to return.</param>
+        internal static void ReturnSpanBasedStringBuilder(SpanBasedStringBuilder stringBuilder)
         {
-            if (ropeBuilder == null)
+            if (stringBuilder == null)
             {
-                throw new ArgumentNullException(nameof(ropeBuilder));
+                throw new ArgumentNullException(nameof(stringBuilder));
             }
 #if !NET35
-            s_ropeBuilderPool.Return(ropeBuilder);
+            s_stringBuilderPool.Return(stringBuilder);
 #endif
         }
 

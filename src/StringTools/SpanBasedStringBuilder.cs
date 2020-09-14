@@ -8,14 +8,14 @@ namespace StringTools
 {
     /// <summary>
     /// A StringBuilder replacement that keeps a list of <see cref="ReadOnlyMemory{T}"/> spans making up the intermediate string rather
-    /// than a copy of its characters. This has positive impact on both memory (no need to allocate space for intermediate strings) and
-    /// time (no need to copy characters to intermediate strings).
+    /// than a copy of its characters. This has positive impact on both memory (no need to allocate space for the intermediate string)
+    /// and time (no need to copy characters to the intermediate string).
     /// </summary>
     /// <remarks>
     /// The <see cref="ToString"/> method tries to intern the resulting string without even allocating it if it's already interned.
-    /// Use <see cref="StringTools.GetRopeBuilder"/> to take advantage of pooling to eliminate allocation overhead of this class.
+    /// Use <see cref="StringTools.GetSpanBasedStringBuilder"/> to take advantage of pooling to eliminate allocation overhead of this class.
     /// </remarks>
-    public class RopeBuilder : IDisposable
+    public class SpanBasedStringBuilder : IDisposable
     {
         /// <summary>
         /// Enumerator for the top-level class. Enumerates characters of the string.
@@ -83,15 +83,15 @@ namespace StringTools
         private readonly List<ReadOnlyMemory<char>> _spans;
 
         /// <summary>
-        /// Internal getter to get the list of spans out of the RopeBuilder.
+        /// Internal getter to get the list of spans out of the SpanBasedStringBuilder.
         /// </summary>
         internal List<ReadOnlyMemory<char>> Spans => _spans;
 
         /// <summary>
-        /// Constructs a new RopeBuilder containing the given string.
+        /// Constructs a new SpanBasedStringBuilder containing the given string.
         /// </summary>
         /// <param name="str">The string to wrap, must be non-null.</param>
-        public RopeBuilder(string str)
+        public SpanBasedStringBuilder(string str)
             : this()
         {
             if (str == null)
@@ -102,9 +102,9 @@ namespace StringTools
         }
 
         /// <summary>
-        /// Constructs a new empty RopeBuilder with the given expected number of spans.
+        /// Constructs a new empty SpanBasedStringBuilder with the given expected number of spans.
         /// </summary>
-        public RopeBuilder(int capacity = 4)
+        public SpanBasedStringBuilder(int capacity = 4)
         {
             _spans = new List<ReadOnlyMemory<char>>(capacity);
             Length = 0;
@@ -116,7 +116,7 @@ namespace StringTools
         public int Length { get; private set; }
 
         /// <summary>
-        /// Gets the capacity of the RopeBuilder in terms of number of spans it can hold without allocating.
+        /// Gets the capacity of the SpanBasedStringBuilder in terms of number of spans it can hold without allocating.
         /// </summary>
         public int Capacity => _spans.Capacity;
 
@@ -145,7 +145,7 @@ namespace StringTools
         /// </summary>
         public void Dispose()
         {
-            StringTools.ReturnRopeBuilder(this);
+            StringTools.ReturnSpanBasedStringBuilder(this);
         }
 
         #region Public mutating methods

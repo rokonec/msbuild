@@ -1100,7 +1100,7 @@ namespace Microsoft.Build.Construction
         /// </summary>
         private static string GetPropertiesAttributeForDirectMSBuildTask(ProjectConfigurationInSolution projectConfiguration)
         {
-            using RopeBuilder directProjectProperties = ST.GetRopeBuilder();
+            using SpanBasedStringBuilder directProjectProperties = ST.GetSpanBasedStringBuilder();
             directProjectProperties.Append(GetConfigurationAndPlatformPropertiesString(projectConfiguration));
             directProjectProperties.Append(";");
             directProjectProperties.Append(SolutionProperties);
@@ -1350,7 +1350,7 @@ namespace Microsoft.Build.Construction
         private void AddMetaprojectBuildTask(ProjectInSolution project, ProjectTargetInstance target, string targetToBuild, string outputItem)
         {
             ProjectTaskInstance task;
-            using (RopeBuilder condition = ST.GetRopeBuilder())
+            using (SpanBasedStringBuilder condition = ST.GetSpanBasedStringBuilder())
             {
                 condition.Append("'%(ProjectReference.Identity)' == '");
                 condition.Append(GetMetaprojectName(project));

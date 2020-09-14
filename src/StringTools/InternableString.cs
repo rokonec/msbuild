@@ -150,13 +150,13 @@ namespace StringTools
         }
 
         /// <summary>
-        /// Constructs a new InternableString wrapping the given RopeBuilder.
+        /// Constructs a new InternableString wrapping the given SpanBasedStringBuilder.
         /// </summary>
-        internal InternableString(RopeBuilder ropeBuilder)
+        internal InternableString(SpanBasedStringBuilder stringBuilder)
         {
             _inlineSpan = default(ReadOnlySpan<char>);
-            _spans = ropeBuilder.Spans;
-            Length = ropeBuilder.Length;
+            _spans = stringBuilder.Spans;
+            Length = stringBuilder.Length;
 #if NETSTANDARD
             _inlineSpanString = null;
 #endif

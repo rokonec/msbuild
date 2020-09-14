@@ -10,9 +10,9 @@ using System.Text;
 namespace StringTools
 {
     /// <summary>
-    /// A simple version of RopeBuilder to be used on .NET Framework 3.5. Wraps a <see cref="StringBuilder"/>.
+    /// A simple version of SpanBasedStringBuilder to be used on .NET Framework 3.5. Wraps a <see cref="StringBuilder"/>.
     /// </summary>
-    public class RopeBuilder : IDisposable
+    public class SpanBasedStringBuilder : IDisposable
     {
         /// <summary>
         /// Enumerator for the top-level struct. Enumerates characters of the string.
@@ -64,10 +64,10 @@ namespace StringTools
         internal StringBuilder Builder => _builder;
 
         /// <summary>
-        /// Constructs a new RopeBuilder containing the given string.
+        /// Constructs a new SpanBasedStringBuilder containing the given string.
         /// </summary>
         /// <param name="str">The string to wrap, must be non-null.</param>
-        public RopeBuilder(string str)
+        public SpanBasedStringBuilder(string str)
             : this()
         {
             if (str == null)
@@ -78,9 +78,9 @@ namespace StringTools
         }
 
         /// <summary>
-        /// Constructs a new empty RopeBuilder with the given expected number of spans.
+        /// Constructs a new empty SpanBasedStringBuilder with the given expected number of spans.
         /// </summary>
-        public RopeBuilder(int capacity = 4)
+        public SpanBasedStringBuilder(int capacity = 4)
         {
             _builder = new StringBuilder(capacity * 128);
         }
@@ -115,7 +115,7 @@ namespace StringTools
         /// </summary>
         public void Dispose()
         {
-            StringTools.ReturnRopeBuilder(this);
+            StringTools.ReturnSpanBasedStringBuilder(this);
         }
 
         #region Public mutating methods

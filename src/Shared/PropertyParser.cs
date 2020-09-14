@@ -164,22 +164,22 @@ namespace Microsoft.Build.Tasks
                 // needs to pass onto the engine.
                 log?.LogMessageFromText(parameterName, MessageImportance.Low);
 
-                using RopeBuilder ropeBuilder = ST.GetRopeBuilder();
+                using SpanBasedStringBuilder stringBuilder = ST.GetSpanBasedStringBuilder();
                 foreach (PropertyNameValuePair propertyNameValuePair in finalPropertiesList)
                 {
-                    ropeBuilder.Clear();
+                    stringBuilder.Clear();
                     bool needsSemicolon = false;
                     foreach (string valueFragment in propertyNameValuePair.Value)
                     {
                         if (needsSemicolon)
                         {
-                            ropeBuilder.Append(";");
+                            stringBuilder.Append(";");
                         }
                         needsSemicolon = true;
-                        ropeBuilder.Append(valueFragment);
+                        stringBuilder.Append(valueFragment);
                     }
 
-                    string propertyValue = ropeBuilder.ToString();
+                    string propertyValue = stringBuilder.ToString();
                     finalPropertiesTable[propertyNameValuePair.Name] = propertyValue;
                     log?.LogMessageFromText(
                         $"  {propertyNameValuePair.Name}={propertyValue}",

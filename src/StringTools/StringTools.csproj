@@ -26,12 +26,12 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net35'">
-    <Compile Remove="RopeBuilder.cs" />
+    <Compile Remove="SpanBasedStringBuilder.cs" />
     <Compile Remove="InternableString.cs" />
     <Compile Remove="WeakStringCache.Concurrent.cs" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' != 'net35'">
-    <Compile Remove="RopeBuilder.Simple.cs" />
+    <Compile Remove="SpanBasedStringBuilder.Simple.cs" />
     <Compile Remove="InternableString.Simple.cs" />
     <Compile Remove="WeakStringCache.Locking.cs" />
   </ItemGroup>
