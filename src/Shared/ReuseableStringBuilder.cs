@@ -15,7 +15,7 @@ namespace Microsoft.Build.Shared
     /// A StringBuilder lookalike that reuses its internal storage.
     /// </summary>
     /// <remarks>
-    /// You can add any properties or methods on the real StringBuilder that are needed.
+    /// This class is being deprecated in favor of SpanBasedStringBuilder in StringTools. Avoid adding more uses.
     /// </remarks>
     internal sealed class ReuseableStringBuilder : IDisposable
     {
