@@ -3,6 +3,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+
 using Microsoft.Build.Shared;
 
 namespace Microsoft.Build.Collections
@@ -178,6 +180,36 @@ namespace Microsoft.Build.Collections
             {
                 return StringComparer.OrdinalIgnoreCase.GetHashCode(obj.Substring(start, length));
             }
+        }
+    }
+
+    internal static class DictionaryPrototypes<TKey, TValue>
+    {
+        /// <summary>
+        /// Empty dictionary with a <see cref="MSBuildNameIgnoreCaseComparer" />,
+        /// used as the basis of new dictionaries with that comparer to avoid
+        /// allocating new comparers objects.
+        /// </summary>
+        internal static ImmutableDictionary<TKey, TValue> MSBuildNameIgnoreCaseInstance;
+
+        static DictionaryPrototypes()
+        {
+            MSBuildNameIgnoreCaseInstance = ImmutableDictionary.Create<TKey, TValue>((IEqualityComparer<TKey>)MSBuildNameIgnoreCaseComparer.Default);
+        }
+
+        internal static ImmutableDictionary<TKey, TValue> Get(IEqualityComparer<TKey> comparer)
+        {
+            if (comparer is MSBuildNameIgnoreCaseComparer)
+            {
+                if (typeof(TKey) != typeof(string))
+                {
+                    throw new InternalErrorException($"Attempted to get a comparer that should only be used on string with a {typeof(TKey)}");
+                }
+
+                return MSBuildNameIgnoreCaseInstance;
+            }
+
+            return ImmutableDictionary.Create<TKey, TValue>(comparer);
         }
     }
 }
