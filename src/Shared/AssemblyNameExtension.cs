@@ -16,6 +16,47 @@ using System.Reflection.Metadata;
 
 namespace Microsoft.Build.Shared
 {
+    internal static class BinarySerializationHelper
+    {
+        public static byte[] ReadByteArray(this BinaryReader br)
+        {
+            var hasValue = br.ReadBoolean();
+
+            if (!hasValue)
+                return null;
+
+            var count = br.ReadInt32();
+            var bytes = br.ReadBytes(count);
+            return bytes;
+        }
+
+        public static void WriteByteArray(this BinaryWriter bw, byte[] bytes)
+        {
+            bw.Write((bool)(bytes != null));
+            if (bytes != null)
+            {
+                bw.Write((int)bytes.Length);
+                bw.Write((byte[])bytes);
+            }
+        }
+
+        public static string ReadNullableString(this BinaryReader br)
+        {
+            var hasValue = br.ReadBoolean();
+            return hasValue ? br.ReadString() : null;
+        }
+
+        public static void WriteNullableString(this BinaryWriter bw, string value)
+        {
+            bool hasValue = value != null;
+            bw.Write((bool)hasValue);
+            if (hasValue)
+            {
+                bw.Write((string)value);
+            }
+        }
+    }
+
     /// <summary>
     /// Specifies the parts of the assembly name to partially match
     /// </summary>
@@ -171,6 +212,147 @@ namespace Microsoft.Build.Shared
             hasProcessorArchitectureInFusionName = info.GetBoolean("hasCpuArch");
             immutable = info.GetBoolean("immutable");
             remappedFrom = (HashSet<AssemblyNameExtension>) info.GetValue("remapped", typeof(HashSet<AssemblyNameExtension>));
+        }
+
+        internal AssemblyNameExtension(BinaryReader br)
+        {
+            var hasAssemblyName = br.ReadBoolean();
+
+            if (hasAssemblyName)
+            {
+                var name = br.ReadString();
+                var publicKey = br.ReadByteArray();
+                var publicKeyToken = br.ReadByteArray();
+
+                var version = DeserializeVersionFromBinary(br);
+                var flags = (AssemblyNameFlags)br.ReadInt32();
+                var processorArchitecture = (ProcessorArchitecture)br.ReadInt32();
+
+                CultureInfo cultureInfo = null;
+                var hasCultureInfo = br.ReadBoolean();
+                if (hasCultureInfo)
+                {
+                    cultureInfo = new CultureInfo(br.ReadInt32());
+                }
+
+                var hashAlgorithm = (System.Configuration.Assemblies.AssemblyHashAlgorithm)br.ReadInt32();
+                var versionCompatibility = (AssemblyVersionCompatibility)br.ReadInt32();
+                var codeBase = br.ReadNullableString();
+
+                StrongNameKeyPair keyPair = null;
+                var hasKeyPair = br.ReadBoolean();
+                if (hasKeyPair)
+                {
+                    keyPair = new StrongNameKeyPair(br.ReadByteArray());
+                }
+
+                asAssemblyName = new AssemblyName
+                {
+                    Name = name,
+                    Version = version,
+                    Flags = flags,
+                    ProcessorArchitecture = processorArchitecture,
+                    CultureInfo = cultureInfo,
+                    HashAlgorithm = hashAlgorithm,
+                    VersionCompatibility = versionCompatibility,
+                    CodeBase = codeBase,
+                    KeyPair = keyPair
+                };
+
+                asAssemblyName.SetPublicKey(publicKey);
+                asAssemblyName.SetPublicKeyToken(publicKeyToken);
+            }
+
+            asString = br.ReadNullableString();
+            isSimpleName = br.ReadBoolean();
+            hasProcessorArchitectureInFusionName = br.ReadBoolean();
+            immutable = br.ReadBoolean();
+
+            var hasRemapedFrom = br.ReadBoolean();
+            if (hasRemapedFrom)
+            {
+                var remappedFromCount = br.ReadInt32();
+                remappedFrom = new HashSet<AssemblyNameExtension>();
+                for (int i = 0; i < remappedFromCount; i++)
+                {
+                    remappedFrom.Add(new AssemblyNameExtension(br));
+                }
+            }
+        }
+
+        internal void SerializeToBinary(BinaryWriter bw)
+        {
+            bw.Write((bool)(asAssemblyName != null));
+            if (asAssemblyName != null)
+            {
+                bw.Write((string)asAssemblyName.Name);
+                bw.WriteByteArray(asAssemblyName.GetPublicKey());
+                bw.WriteByteArray(asAssemblyName.GetPublicKeyToken());
+
+                SerializeVersionToBinary(asAssemblyName.Version, bw);
+
+                bw.Write((int)asAssemblyName.Flags);
+                bw.Write((int)asAssemblyName.ProcessorArchitecture);
+
+                bw.Write((bool)(asAssemblyName.CultureInfo != null));
+                if (asAssemblyName.CultureInfo != null)
+                {
+                    bw.Write((int)asAssemblyName.CultureInfo.LCID);
+                }
+
+                bw.Write((int)asAssemblyName.HashAlgorithm);
+                bw.Write((int)asAssemblyName.VersionCompatibility);
+                bw.WriteNullableString((string)asAssemblyName.CodeBase);
+
+                bw.Write((bool)(asAssemblyName.KeyPair != null));
+                if (asAssemblyName.KeyPair != null)
+                {
+                    bw.WriteByteArray(asAssemblyName.KeyPair.PublicKey);
+                }
+            }
+
+            bw.WriteNullableString((string)asString);
+            bw.Write((bool)isSimpleName);
+            bw.Write((bool)hasProcessorArchitectureInFusionName);
+            bw.Write((bool)immutable);
+
+
+            bw.Write((bool)(remappedFrom != null)); // hasRemapedFrom
+            if (remappedFrom != null)
+            {
+                bw.Write((int)remappedFrom.Count);
+                foreach (var rf in remappedFrom)
+                {
+                    rf.SerializeToBinary(bw);
+                }
+            }
+        }
+
+        public static void SerializeVersionToBinary(Version version, BinaryWriter bw)
+        {
+            bw.Write((int)version.Major);
+            bw.Write((int)version.Minor);
+            bw.Write((int)version.Build);
+            bw.Write((int)version.Revision);
+        }
+
+        internal static Version DeserializeVersionFromBinary(BinaryReader br)
+        {
+            var major = br.ReadInt32();
+            var minor = br.ReadInt32();
+            var build = br.ReadInt32();
+            var revision = br.ReadInt32();
+
+            if (build < 0)
+            {
+                return new Version(major, minor);
+            }
+            else if (revision < 0)
+            {
+                return new Version(major, minor, build);
+            }
+
+            return new Version(major, minor, build, revision);
         }
 
         /// <summary>

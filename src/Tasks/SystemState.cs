@@ -13,6 +13,7 @@ using System.Runtime.Versioning;
 using System.Security.Permissions;
 using Microsoft.Build.Shared;
 using Microsoft.Build.Tasks.AssemblyDependency;
+using Microsoft.Build.Utilities;
 
 namespace Microsoft.Build.Tasks
 {
@@ -169,6 +170,94 @@ namespace Microsoft.Build.Tasks
                 }
             }
 
+            public FileState(BinaryReader br)
+            {
+                var mod = br.ReadInt64();
+                var modk = br.ReadInt32();
+                lastModified = new DateTime(mod, (DateTimeKind)modk);
+
+                var hasAssemblyName = br.ReadBoolean();
+                if (hasAssemblyName)
+                {
+                    assemblyName = new AssemblyNameExtension(br);
+                }
+
+                bool hasDependencies = br.ReadBoolean();
+                if (hasDependencies)
+                {
+                    int dependenciesCount = br.ReadInt32();
+                    dependencies = new AssemblyNameExtension[dependenciesCount];
+                    for (int i = 0; i < dependenciesCount; i++)
+                    {
+                        dependencies[i] = new AssemblyNameExtension(br);
+                    }
+                }
+
+                bool hasScatterFiles = br.ReadBoolean();
+                if (hasScatterFiles)
+                {
+                    int scatterFilesCount = br.ReadInt32();
+                    scatterFiles = new string[scatterFilesCount];
+                    for (int i = 0; i < scatterFilesCount; i++)
+                    {
+                        scatterFiles[i] = br.ReadString();
+                    }
+                }
+
+                runtimeVersion = br.ReadString();
+
+                bool hasFrameworkName = br.ReadBoolean();
+                if (hasFrameworkName)
+                {
+                    Version frameworkNameVersion = AssemblyNameExtension.DeserializeVersionFromBinary(br);
+                    var frameworkIdentifier = br.ReadString();
+                    var frameworkProfile = br.ReadString();
+                    frameworkName = new FrameworkName(frameworkIdentifier, frameworkNameVersion, frameworkProfile);
+                }
+            }
+
+            internal void SerializeToBinary(BinaryWriter bw)
+            {
+                bw.Write((long)lastModified.Ticks);
+                bw.Write((int)lastModified.Kind);
+
+                bw.Write((bool)(assemblyName != null));
+                if (assemblyName != null)
+                {
+                    assemblyName.SerializeToBinary(bw);
+                }
+
+                bw.Write((bool)(dependencies != null));
+                if (dependencies != null)
+                {
+                    bw.Write((int)dependencies.Length);
+                    foreach (var dep in dependencies)
+                    {
+                        dep.SerializeToBinary(bw);
+                    }
+                }
+
+                bw.Write((bool)(scatterFiles != null));
+                if (scatterFiles != null)
+                {
+                    bw.Write((int)scatterFiles.Length);
+                    foreach (var sf in scatterFiles)
+                    {
+                        bw.Write((string)sf);
+                    }
+                }
+
+                bw.Write((string)runtimeVersion);
+
+                bw.Write((bool)(frameworkName != null));
+                if (frameworkName != null)
+                {
+                    AssemblyNameExtension.SerializeVersionToBinary(frameworkName.Version, bw);
+                    bw.Write((string)frameworkName.Identifier);
+                    bw.Write((string)frameworkName.Profile);
+                }
+            }
+
             /// <summary>
             /// Serialize the contents of the class.
             /// </summary>
@@ -248,6 +337,101 @@ namespace Microsoft.Build.Tasks
 
             instanceLocalFileStateCache = (Hashtable)info.GetValue("fileState", typeof(Hashtable));
             isDirty = false;
+        }
+
+        internal static SystemState DeserializeFromBinary(string stateFile, TaskLoggingHelper log)
+        {
+            SystemState retval = null;
+
+            try
+            {
+                if (!string.IsNullOrEmpty(stateFile) && File.Exists(stateFile))
+                {
+                    using (FileStream s = new FileStream(stateFile, FileMode.Open))
+                    using (var br = new BinaryReader(s))
+                    {
+                        // TODO: check file signature & version
+                        if (br.ReadByte() != 'R' ||
+                            br.ReadByte() != 'S' ||
+                            br.ReadByte() != 'C' ||
+                            br.ReadByte() != 0x02)
+                        {
+                            throw new SerializationException("Unexpected system state cache file signature or version");
+                        }
+
+                        retval = new SystemState();
+
+                        retval.instanceLocalFileStateCache = new Hashtable();
+                        var count = br.ReadInt32();
+                        for (int i = 0; i < count; i++)
+                        {
+                            var key = br.ReadString();
+                            var value = new FileState(br);
+
+                            retval.instanceLocalFileStateCache[key] = value;
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                if (ExceptionHandling.IsCriticalException(e))
+                {
+                    throw;
+                }
+
+                // The deserialization process seems like it can throw just about 
+                // any exception imaginable.  Catch them all here.
+                // Not being able to deserialize the cache is not an error, but we let the user know anyway.
+                // Don't want to hold up processing just because we couldn't read the file.
+
+                log.LogWarningWithCodeFromResources("General.CouldNotReadStateFile", stateFile, e.Message);
+            }
+
+            return retval;
+        }
+
+        internal void SerializeToBinary(string stateFile, TaskLoggingHelper log)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(stateFile))
+                {
+                    if (File.Exists(stateFile))
+                    {
+                        File.Delete(stateFile);
+                    }
+
+                    using (var s = new FileStream(stateFile, FileMode.CreateNew))
+                    using (var bw = new BinaryWriter(s))
+                    {
+                        // TODO: file header
+                        bw.Write((byte)'R');
+                        bw.Write((byte)'S');
+                        bw.Write((byte)'C');
+                        bw.Write((byte)0x02); // version
+                        // data
+                        bw.Write((int)instanceLocalFileStateCache.Count);
+                        foreach (DictionaryEntry pair in instanceLocalFileStateCache)
+                        {
+                            bw.Write((string)pair.Key);
+                            ((FileState)pair.Value).SerializeToBinary(bw);
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                // If there was a problem writing the file (like it's read-only or locked on disk, for
+                // example), then eat the exception and log a warning.  Otherwise, rethrow.
+                if (ExceptionHandling.NotExpectedSerializationException(e))
+                    throw;
+
+                // Not being able to serialize the cache is not an error, but we let the user know anyway.
+                // Don't want to hold up processing just because we couldn't read the file.
+
+                log.LogWarningWithCodeFromResources("General.CouldNotWriteStateFile", stateFile, e.Message);
+            }
         }
 
         /// <summary>
