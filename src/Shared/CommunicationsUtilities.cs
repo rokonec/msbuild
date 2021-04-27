@@ -80,16 +80,18 @@ namespace Microsoft.Build.Internal
             // This indicates in the first byte that we are a modern build.
             options = (int)nodeType | (((int)CommunicationsUtilities.handshakeVersion) << 24);
             string handshakeSalt = Environment.GetEnvironmentVariable("MSBUILDNODEHANDSHAKESALT");
-            CommunicationsUtilities.Trace("Handshake salt is " + handshakeSalt);
+            CommunicationsUtilities.Trace("Handshake salt is {0}", handshakeSalt);
             string toolsDirectory = (nodeType & HandshakeOptions.X64) == HandshakeOptions.X64 ? BuildEnvironmentHelper.Instance.MSBuildToolsDirectory64 : BuildEnvironmentHelper.Instance.MSBuildToolsDirectory32;
-            CommunicationsUtilities.Trace("Tools directory is " + toolsDirectory);
+            CommunicationsUtilities.Trace("Tools directory is {0}", toolsDirectory);
             salt = CommunicationsUtilities.GetHashCode(handshakeSalt + toolsDirectory);
             Version fileVersion = new Version(FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion);
             fileVersionMajor = fileVersion.Major;
             fileVersionMinor = fileVersion.Minor;
             fileVersionBuild = fileVersion.Build;
             fileVersionPrivate = fileVersion.Revision;
-            sessionId = Process.GetCurrentProcess().SessionId;
+            sessionId = (Environment.GetEnvironmentVariable("MSBUILDCLEARXMLCACHEONBUILDMANAGER") == "1")
+                ? Process.GetCurrentProcess().SessionId
+                : 0;
         }
 
         // This is used as a key, so it does not need to be human readable.
@@ -317,7 +319,7 @@ namespace Microsoft.Build.Internal
         /// <summary>
         /// Indicate to the client that all elements of the Handshake have been sent.
         /// </summary>
-        internal static void WriteEndOfHandshakeSignal(this PipeStream stream)
+        internal static void WriteEndOfHandshakeSignal(this Stream stream)
         {
             stream.WriteIntForHandshake(EndOfHandshakeSignal);
         }
@@ -325,7 +327,7 @@ namespace Microsoft.Build.Internal
         /// <summary>
         /// Extension method to write a series of bytes to a stream
         /// </summary>
-        internal static void WriteIntForHandshake(this PipeStream stream, int value)
+        internal static void WriteIntForHandshake(this Stream stream, int value)
         {
             byte[] bytes = BitConverter.GetBytes(value);
 
@@ -341,18 +343,11 @@ namespace Microsoft.Build.Internal
             stream.Write(bytes, 0, bytes.Length);
         }
 
-        internal static void ReadEndOfHandshakeSignal(this PipeStream stream, bool isProvider
-#if NETCOREAPP2_1 || MONO
-            , int timeout
-#endif
-            )
+        // TODO: spannification - if possible
+        internal static void ReadEndOfHandshakeSignal(this MemoryStream stream, bool isProvider)
         {
             // Accept only the first byte of the EndOfHandshakeSignal
-            int valueRead = stream.ReadIntForHandshake(null
-#if NETCOREAPP2_1 || MONO
-            , timeout
-#endif
-                );
+            int valueRead = stream.ReadIntForHandshake();
 
             if (valueRead != EndOfHandshakeSignal)
             {
@@ -364,72 +359,53 @@ namespace Microsoft.Build.Internal
                 {
                     CommunicationsUtilities.Trace("Expected end of handshake signal but received {0}. Probably the host is a different MSBuild build.", valueRead);
                 }
-                throw new InvalidOperationException();
+                throw new InvalidOperationException("Not matching 'End of handshake'.");
             }
+        }
+
+        internal static int ReadHandshakeWithTimeout(this Stream stream, byte[] buffer, int offset, int count, int timeout)
+        {
+            // Enforce a minimum timeout because the Windows code can pass
+            // a timeout of 0 for the connection, but that doesn't work for
+            // the actual timeout here.
+            timeout = Math.Max(timeout, 50);
+
+#if !CLR2COMPATIBILITY
+            // A legacy MSBuild.exe won't try to connect to MSBuild running
+            // in a dotnet host process, so we can read the bytes simply.
+            var readTask = stream.ReadAsync(buffer, offset, count);
+
+            // Manual timeout here because the timeout passed to Connect() just before
+            // calling this method does not apply on UNIX domain socket-based
+            // implementations of PipeStream.
+            // https://github.com/dotnet/corefx/issues/28791
+            if (!readTask.Wait(timeout))
+            {
+                throw new IOException(string.Format(CultureInfo.InvariantCulture, "Did not receive {0} handshake bytes in {1}ms", count, timeout));
+            }
+
+            var readBytes = readTask.GetAwaiter().GetResult();
+
+            if (readBytes != count)
+            {
+                throw new IOException(string.Format(CultureInfo.InvariantCulture, "Receive only {0} from required {1} handshake bytes", readBytes, count));
+            }
+
+            return readBytes;
+#else
+            return stream.Read(buffer, offset, count);
+#endif
         }
 
         /// <summary>
         /// Extension method to read a series of bytes from a stream.
         /// If specified, leading byte matches one in the supplied array if any, returns rejection byte and throws IOException.
         /// </summary>
-        internal static int ReadIntForHandshake(this PipeStream stream, byte? byteToAccept
-#if NETCOREAPP2_1 || MONO
-            , int timeout
-#endif
-            )
+        internal static int ReadIntForHandshake(this MemoryStream stream)
         {
             byte[] bytes = new byte[4];
 
-#if NETCOREAPP2_1 || MONO
-            if (!NativeMethodsShared.IsWindows)
-            {
-                // Enforce a minimum timeout because the Windows code can pass
-                // a timeout of 0 for the connection, but that doesn't work for
-                // the actual timeout here.
-                timeout = Math.Max(timeout, 50);
-
-                // A legacy MSBuild.exe won't try to connect to MSBuild running
-                // in a dotnet host process, so we can read the bytes simply.
-                var readTask = stream.ReadAsync(bytes, 0, bytes.Length);
-
-                // Manual timeout here because the timeout passed to Connect() just before
-                // calling this method does not apply on UNIX domain socket-based
-                // implementations of PipeStream.
-                // https://github.com/dotnet/corefx/issues/28791
-                if (!readTask.Wait(timeout))
-                {
-                    throw new IOException(string.Format(CultureInfo.InvariantCulture, "Did not receive return handshake in {0}ms", timeout));
-                }
-
-                readTask.GetAwaiter().GetResult();
-            }
-            else
-#endif
-            {
-                // Legacy approach with an early-abort for connection attempts from ancient MSBuild.exes
-                for (int i = 0; i < bytes.Length; i++)
-                {
-                    int read = stream.ReadByte();
-
-                    if (read == -1)
-                    {
-                        // We've unexpectly reached end of stream.
-                        // We are now in a bad state, disconnect on our end
-                        throw new IOException(String.Format(CultureInfo.InvariantCulture, "Unexpected end of stream while reading for handshake"));
-                    }
-
-                    bytes[i] = Convert.ToByte(read);
-
-                    if (i == 0 && byteToAccept != null && byteToAccept != bytes[0])
-                    {
-                        stream.WriteIntForHandshake(0x0F0F0F0F);
-                        stream.WriteIntForHandshake(0x0F0F0F0F);
-                        throw new InvalidOperationException(String.Format(CultureInfo.InvariantCulture, "Client: rejected old host. Received byte {0} instead of {1}.", bytes[0], byteToAccept));
-                    }
-                }
-            }
-
-            int result;
+            stream.Read(bytes, 0, bytes.Length);
 
             try
             {
@@ -440,14 +416,12 @@ namespace Microsoft.Build.Internal
                     Array.Reverse(bytes);
                 }
 
-                result = BitConverter.ToInt32(bytes, 0 /* start index */);
+                return BitConverter.ToInt32(bytes, 0 /* start index */);
             }
             catch (ArgumentException ex)
             {
                 throw new IOException(String.Format(CultureInfo.InvariantCulture, "Failed to convert the handshake to big-endian. {0}", ex.Message));
             }
-
-            return result;
         }
 #nullable disable
 

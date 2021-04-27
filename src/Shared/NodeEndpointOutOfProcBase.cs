@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Globalization;
 #if CLR2COMPATIBILITY
 using Microsoft.Build.Shared.Concurrent;
 #else
@@ -31,19 +32,19 @@ namespace Microsoft.Build.BackEnd
     /// </summary>
     internal abstract class NodeEndpointOutOfProcBase : INodeEndpoint
     {
-#region Private Data
+        #region Private Data
 
-#if NETCOREAPP2_1 || MONO
         /// <summary>
         /// The amount of time to wait for the client to connect to the host.
         /// </summary>
         private const int ClientConnectTimeout = 60000;
-#endif // NETCOREAPP2_1 || MONO
 
         /// <summary>
         /// The size of the buffers to use for named pipes
         /// </summary>
-        private const int PipeBufferSize = 131072;
+        // private const int PipeBufferSize = 131072;
+        // TODO: revert back to above
+        private const int PipeBufferSize = 1_000_000_000;
 
         /// <summary>
         /// Flag indicating if we should debug communications or not.
@@ -111,9 +112,16 @@ namespace Microsoft.Build.BackEnd
         /// </summary>
         private BinaryWriter _binaryWriter;
 
-#endregion
+        /// <summary>
+        /// A buffer typically big enough to handle a packet body.
+        /// We use this as a convenient way to manage and cache a byte[] that's resized
+        /// automatically to fit our payload.
+        /// </summary>
+        private MemoryStream _readBufferMemoryStream;
 
-#region INodeEndpoint Events
+        #endregion
+
+        #region INodeEndpoint Events
 
         /// <summary>
         /// Raised when the link status has changed.
@@ -204,6 +212,9 @@ internal void InternalConstruct(string pipeName, bool multiClient = false)
 
             _packetStream = new MemoryStream();
             _binaryWriter = new BinaryWriter(_packetStream);
+
+            _readBufferMemoryStream = new MemoryStream();
+
 
 #if FEATURE_PIPE_SECURITY && FEATURE_NAMED_PIPE_SECURITY_CONSTRUCTOR
             if (!NativeMethodsShared.IsMono)
@@ -386,14 +397,25 @@ internal void InternalConstruct(string pipeName, bool multiClient = false)
                     try
                     {
                         int[] handshakeComponents = handshake.RetrieveHandshakeComponents();
+                        var handshakeBuffer = new byte[(4 * (handshakeComponents.Length + 1))];
+
+                        // read version byte
+                        var readBytes = _pipeServer.ReadHandshakeWithTimeout(handshakeBuffer, 0, 1, ClientConnectTimeout);
+                        // this will disconnect a < 16.8 host; it expects leading 00 or F5 or 06. 0x00 is a wildcard
+                        if (handshakeBuffer[0] != CommunicationsUtilities.handshakeVersion)
+                        {
+                            _pipeServer.WriteIntForHandshake(0x0F0F0F0F);
+                            _pipeServer.WriteIntForHandshake(0x0F0F0F0F);
+                            throw new InvalidOperationException(String.Format(CultureInfo.InvariantCulture, "Client: rejected old host. Received byte {0} instead of {1}.", handshakeBuffer[0], CommunicationsUtilities.handshakeVersion));
+                        }
+
+                        // read rest of the handshake
+                        readBytes += _pipeServer.ReadHandshakeWithTimeout(handshakeBuffer, 1, handshakeBuffer.Length - 1, ClientConnectTimeout);
+
+                        var handshakeReadStream = new MemoryStream(handshakeBuffer);
                         for (int i = 0; i < handshakeComponents.Length; i++)
                         {
-                            int handshakePart = _pipeServer.ReadIntForHandshake(i == 0 ? (byte?)CommunicationsUtilities.handshakeVersion : null /* this will disconnect a < 16.8 host; it expects leading 00 or F5 or 06. 0x00 is a wildcard */
-#if NETCOREAPP2_1 || MONO
-                            , ClientConnectTimeout /* wait a long time for the handshake from this side */
-#endif
-                            );
-
+                            int handshakePart = handshakeReadStream.ReadIntForHandshake();
                             if (handshakePart != handshakeComponents[i])
                             {
                                 CommunicationsUtilities.Trace("Handshake failed. Received {0} from host not {1}. Probably the host is a different MSBuild build.", handshakePart, handshakeComponents[i]);
@@ -406,11 +428,8 @@ internal void InternalConstruct(string pipeName, bool multiClient = false)
                         if (gotValidConnection)
                         {
                             // To ensure that our handshake and theirs have the same number of bytes, receive and send a magic number indicating EOS.
-#if NETCOREAPP2_1 || MONO
-                            _pipeServer.ReadEndOfHandshakeSignal(false, ClientConnectTimeout); /* wait a long time for the handshake from this side */
-#else
-                            _pipeServer.ReadEndOfHandshakeSignal(false);
-#endif
+                            handshakeReadStream.ReadEndOfHandshakeSignal(false);
+
                             CommunicationsUtilities.Trace("Successfully connected to parent.");
                             _pipeServer.WriteEndOfHandshakeSignal();
 
@@ -478,7 +497,7 @@ internal void InternalConstruct(string pipeName, bool multiClient = false)
             }
 
             RunReadLoop(
-                new BufferedReadStream(_pipeServer),
+                _pipeServer, // TODO: delete or revert: new BufferedReadStream(_pipeServer),
                 _pipeServer,
                 localPacketQueue, localPacketAvailable, localTerminatePacketPump);
 
@@ -581,10 +600,39 @@ internal void InternalConstruct(string pipeName, bool multiClient = false)
 
                             try
                             {
-                                _packetFactory.DeserializeAndRoutePacket(0, packetType, BinaryTranslator.GetReadTranslator(localReadPipe, _sharedReadBuffer));
+                                int bodySize =
 #if !CLR2COMPATIBILITY
-                                bytesRead += BinaryPrimitives.ReadInt32LittleEndian(new Span<byte>(headerByte, 1, 4));
-                                MSBuildEventSource.Log.OutOfProcPacketReadStop(packetType.ToString(), bytesRead);
+                                    BinaryPrimitives.ReadInt32LittleEndian(new Span<byte>(headerByte, 1, 4));
+#else
+                                    ((int)headerByte[1]) | ((int)headerByte[2] << 8) | ((int)headerByte[3] << 16) | ((int)headerByte[4] << 24);
+#endif
+
+                                _readBufferMemoryStream.SetLength(bodySize);
+                                byte[] packetData = _readBufferMemoryStream.GetBuffer();
+
+                                var bodyBytesRead = localReadPipe.Read(packetData, 0, bodySize);
+
+                                if (bodyBytesRead != bodySize)
+                                {
+                                    // Incomplete read.  Abort.
+                                    if (bodyBytesRead == 0)
+                                    {
+                                        CommunicationsUtilities.Trace("Parent disconnected abruptly");
+                                    }
+                                    else
+                                    {
+                                        CommunicationsUtilities.Trace("Incomplete body read from server.  {0} of {1} bytes read", bodyBytesRead, bodySize);
+                                    }
+
+                                    ChangeLinkStatus(LinkStatus.Failed);
+                                    exitLoop = true;
+                                    break;
+                                }
+
+                                _readBufferMemoryStream.Seek(0, SeekOrigin.Begin);
+                                _packetFactory.DeserializeAndRoutePacket(0, packetType, BinaryTranslator.GetReadTranslator(_readBufferMemoryStream, _sharedReadBuffer));
+#if !CLR2COMPATIBILITY
+                                MSBuildEventSource.Log.OutOfProcPacketReadStop(packetType.ToString(), headerBytesRead + bodyBytesRead);
 #endif
                             }
                             catch (Exception e)
@@ -610,6 +658,7 @@ internal void InternalConstruct(string pipeName, bool multiClient = false)
                     case 2:
                         try
                         {
+                            // TODO: PERF: during draining of output messages we cant process input messages, for example cancel,
                             // Write out all the queued packets.
                             INodePacket packet;
                             while (localPacketQueue.TryDequeue(out packet))

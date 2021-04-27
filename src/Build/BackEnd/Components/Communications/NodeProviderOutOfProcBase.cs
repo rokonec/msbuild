@@ -404,26 +404,31 @@ namespace Microsoft.Build.BackEnd
                     ValidateRemotePipeSecurityOnWindows(nodeStream);
                 }
 #endif
-
                 int[] handshakeComponents = handshake.RetrieveHandshakeComponents();
+                var handshakeBuffer = new MemoryStream(4 * (handshakeComponents.Length + 1)); // +1 for WriteEndOfHandshakeSignal
                 for (int i = 0; i < handshakeComponents.Length; i++)
                 {
-                    CommunicationsUtilities.Trace("Writing handshake part {0} ({1}) to pipe {2}", i, handshakeComponents[i], pipeName);
-                    nodeStream.WriteIntForHandshake(handshakeComponents[i]);
+                    CommunicationsUtilities.Trace("Buffering handshake part {0} ({1}) for pipe {2}", i, handshakeComponents[i], pipeName);
+                    handshakeBuffer.WriteIntForHandshake(handshakeComponents[i]);
                 }
 
                 // This indicates that we have finished all the parts of our handshake; hopefully the endpoint has as well.
-                nodeStream.WriteEndOfHandshakeSignal();
+                CommunicationsUtilities.Trace("Buffering End of handshake signal for pipe {0}", pipeName);
+                handshakeBuffer.WriteEndOfHandshakeSignal();
 
-                CommunicationsUtilities.Trace("Reading handshake from pipe {0}", pipeName);
+                CommunicationsUtilities.Trace("Writing buffered handshake into pipe {0}", pipeName);
+                nodeStream.Write(handshakeBuffer.GetBuffer(), 0, (int) handshakeBuffer.Position);
 
-#if NETCOREAPP2_1 || MONO
-                nodeStream.ReadEndOfHandshakeSignal(true, timeout);
-#else
-                nodeStream.ReadEndOfHandshakeSignal(true);
-#endif
+                CommunicationsUtilities.Trace("Reading End Of handshake from pipe {0}", pipeName);
+
+                handshakeBuffer.SetLength(4);
+                nodeStream.ReadHandshakeWithTimeout(handshakeBuffer.GetBuffer(), 0, 4, 5 * 1000);
+                handshakeBuffer.Position = 0;
+                handshakeBuffer.ReadEndOfHandshakeSignal(true);
+
                 // We got a connection.
                 CommunicationsUtilities.Trace("Successfully connected to pipe {0}...!", pipeName);
+
                 return nodeStream;
             }
             catch (Exception e) when (!ExceptionHandling.IsCriticalException(e))

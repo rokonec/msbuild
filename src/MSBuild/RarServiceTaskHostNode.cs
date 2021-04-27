@@ -509,7 +509,7 @@ namespace Microsoft.Build.CommandLine
             // 100 threads is equal to about 100 working MSBuild nodes and shall be plenty even for current high end machines
             ThreadPool.SetMinThreads(100, 100);
 
-            const int minListenCapacity = 12;
+            const int minListenCapacity = 8;
             int currentCapacity = 0;
 
             // initiate with two waiting clients

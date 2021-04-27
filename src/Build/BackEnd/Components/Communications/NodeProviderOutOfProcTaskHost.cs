@@ -461,22 +461,19 @@ namespace Microsoft.Build.BackEnd
                 }
             }
 
-            if (nodeContextExists)
-            {
-                // TODO: consider concurrent dict for those too
-                _nodeIdToPacketFactory[(int)hostContext] = factory;
-                _nodeIdToPacketHandler[(int)hostContext] = handler;
+            if (!nodeContextExists)
+                return false;
 
-                // Configure the node.
-                context.SendData(configuration);
-                return true;
-            }
+            // TODO: consider concurrent dict for those too
+            _nodeIdToPacketFactory[(int)hostContext] = factory;
+            _nodeIdToPacketHandler[(int)hostContext] = handler;
 
             // Configure the node.
             context.SendData(configuration);
 
             MSBuildEventSource.Log.NodeProviderAcquireNodeStop(hostContext.ToString(), configuration.NodeId);
 
+            return true;
         }
 
         /// <summary>
@@ -586,7 +583,7 @@ namespace Microsoft.Build.BackEnd
         }
 
         /// <summary>
-        /// Finds or creates a child process which can act as a node.
+        /// Finds or creates a RAR node process
         /// </summary>
         /// <returns>The pipe stream representing the node.</returns>
         protected NodeContext GetRarNode(HandshakeOptions hostContext, INodePacketFactory factory, Handshake hostHandshake, NodeContextTerminateDelegate terminateNode)

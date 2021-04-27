@@ -2008,6 +2008,9 @@ namespace Microsoft.Build.Tasks
 
             MSBuildEventSource.Log.RarOverallStart();
             {
+                // TODO: delete later
+                _silent = _silent || Environment.GetEnvironmentVariable("MSBUILDENFORCESILENTRAR") == "1";
+
                 try
                 {
                     if (_concurrencyExecutionContext is object)
