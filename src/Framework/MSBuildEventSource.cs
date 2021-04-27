@@ -485,6 +485,42 @@ namespace Microsoft.Build.Eventing
             WriteEvent(306, packetName, bytesRead);
         }
 
+        [Event(308, Keywords = Keywords.All)]
+        public void NodeProviderAcquireNodeStart(string nodeContext, int ownerNode)
+        {
+            WriteEvent(308, nodeContext, ownerNode);
+        }
+
+        [Event(309, Keywords = Keywords.All)]
+        public void NodeProviderAcquireNodeStop(string nodeContext, int ownerNode)
+        {
+            WriteEvent(309, nodeContext, ownerNode);
+        }
+
+        [Event(310, Keywords = Keywords.All)]
+        public void NodeProviderLaunchNodeStart(string msbuildLocation, string commandLineArgs)
+        {
+            WriteEvent(310, msbuildLocation, commandLineArgs);
+        }
+
+        [Event(311, Keywords = Keywords.All)]
+        public void NodeProviderLaunchNodeStop(string msbuildLocation, string commandLineArgs)
+        {
+            WriteEvent(311, msbuildLocation, commandLineArgs);
+        }
+
+        [Event(312, Keywords = Keywords.All)]
+        public void NodeProviderConnectToNodeStart(string nodeHandshake, string pipeName)
+        {
+            WriteEvent(312, nodeHandshake, pipeName);
+        }
+
+        [Event(313, Keywords = Keywords.All)]
+        public void NodeProviderConnectToNodeStop(string nodeHandshake, string pipeName)
+        {
+            WriteEvent(313, nodeHandshake, pipeName);
+        }
+
         [Event(210, Keywords = Keywords.All)]
         public void RarServiceTaskExecutionStart(string taskName, int ownerNodeId)
         {

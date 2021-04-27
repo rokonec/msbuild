@@ -373,6 +373,10 @@ namespace Microsoft.Build.BackEnd
         /// </summary>
         protected Stream TryConnectToProcess(string pipeName, int timeout, Handshake handshake)
         {
+#if FEATURE_APM
+            MSBuildEventSource.Log.NodeProviderConnectToNodeStart(handshake.ToString(), pipeName);
+#endif
+
             // Try and connect to the process.
             pipeName = NamedPipeUtil.GetPipeNameOrPath(pipeName);
 
@@ -434,6 +438,12 @@ namespace Microsoft.Build.BackEnd
                 // If we don't close any stream, we might hang up the child
                 nodeStream?.Dispose();
             }
+            finally
+            {
+#if FEATURE_APM
+                MSBuildEventSource.Log.NodeProviderConnectToNodeStop(handshake.ToString(), pipeName);
+#endif
+            }
 
             return null;
         }
@@ -443,6 +453,10 @@ namespace Microsoft.Build.BackEnd
         /// </summary>
         private Process LaunchNode(string msbuildLocation, string commandLineArgs)
         {
+#if FEATURE_APM
+            MSBuildEventSource.Log.NodeProviderLaunchNodeStart(msbuildLocation, commandLineArgs);
+#endif
+
             // Should always have been set already.
             ErrorUtilities.VerifyThrowInternalLength(msbuildLocation, nameof(msbuildLocation));
 
@@ -540,6 +554,10 @@ namespace Microsoft.Build.BackEnd
                 }
 
                 CommunicationsUtilities.Trace("Successfully launched {1} node with PID {0}", process.Id, exeName);
+
+#if FEATURE_APM
+                MSBuildEventSource.Log.NodeProviderLaunchNodeStop(msbuildLocation, commandLineArgs);
+#endif
                 return process;
             }
             else
@@ -598,7 +616,12 @@ namespace Microsoft.Build.BackEnd
                 }
 
                 CommunicationsUtilities.Trace("Successfully launched {1} node with PID {0}", childProcessId, exeName);
-                return Process.GetProcessById(childProcessId);
+
+                var process = Process.GetProcessById(childProcessId);
+#if FEATURE_APM
+                MSBuildEventSource.Log.NodeProviderLaunchNodeStop(msbuildLocation, commandLineArgs);
+#endif
+                return process;
             }
         }
 

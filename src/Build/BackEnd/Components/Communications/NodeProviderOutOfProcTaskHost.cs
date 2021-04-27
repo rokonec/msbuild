@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Diagnostics;
 using System.Threading;
-
+using Microsoft.Build.Eventing;
 using Microsoft.Build.Shared;
 using Microsoft.Build.Internal;
 
@@ -443,6 +443,8 @@ namespace Microsoft.Build.BackEnd
         /// </summary>
         internal bool AcquireAndSetUpHost(HandshakeOptions hostContext, INodePacketFactory factory, INodePacketHandler handler, TaskHostConfiguration configuration)
         {
+            MSBuildEventSource.Log.NodeProviderAcquireNodeStart(hostContext.ToString(), configuration.NodeId);
+
             bool nodeContextExists = _nodeContexts.TryGetValue(hostContext, out var context);
 
             if (!nodeContextExists)
@@ -451,6 +453,7 @@ namespace Microsoft.Build.BackEnd
                 nodeContextExists = isRarService ?
                     CreateRarNode(hostContext, factory, handler, configuration) :
                     CreateNode(hostContext, factory, handler, configuration);
+
                 if (nodeContextExists)
                 {
                     // get just created node context
@@ -469,7 +472,11 @@ namespace Microsoft.Build.BackEnd
                 return true;
             }
 
-            return false;
+            // Configure the node.
+            context.SendData(configuration);
+
+            MSBuildEventSource.Log.NodeProviderAcquireNodeStop(hostContext.ToString(), configuration.NodeId);
+
         }
 
         /// <summary>

@@ -537,13 +537,13 @@ internal void InternalConstruct(string pipeName, bool multiClient = false)
                 {
                     case 0:
                         {
-                            int bytesRead = 0;
+                            int headerBytesRead = 0;
                             try
                             {
 #if FEATURE_APM
-                                bytesRead = localReadPipe.EndRead(result);
+                                headerBytesRead = localReadPipe.EndRead(result);
 #else
-                                bytesRead = readTask.Result;
+                                headerBytesRead = readTask.Result;
 #endif
                             }
                             catch (Exception e)
@@ -556,16 +556,16 @@ internal void InternalConstruct(string pipeName, bool multiClient = false)
                                 break;
                             }
 
-                            if (bytesRead != headerByte.Length)
+                            if (headerBytesRead != headerByte.Length)
                             {
                                 // Incomplete read.  Abort.
-                                if (bytesRead == 0)
+                                if (headerBytesRead == 0)
                                 {
                                     CommunicationsUtilities.Trace("Parent disconnected abruptly");
                                 }
                                 else
                                 {
-                                    CommunicationsUtilities.Trace("Incomplete header read from server.  {0} of {1} bytes read", bytesRead, headerByte.Length);
+                                    CommunicationsUtilities.Trace("Incomplete header read from server.  {0} of {1} bytes read", headerBytesRead, headerByte.Length);
                                 }
 
                                 ChangeLinkStatus(LinkStatus.Failed);
