@@ -1134,7 +1134,7 @@ namespace Microsoft.Build.BackEnd
                     (
                     new BuildEventFileInfo(parameterLocation),
                     "SetAccessorNotAvailableOnTaskParameter",
-                    parameterName + " !!!ATTACH IN A MINUTE!!! ",
+                    parameterName + $" !!!ATTACH IN A MINUTE!!! the pid {Process.GetCurrentProcess().Id}",
                     parameterName
                     );
 
