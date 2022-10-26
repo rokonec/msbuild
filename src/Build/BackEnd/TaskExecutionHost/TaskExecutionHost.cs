@@ -1128,13 +1128,23 @@ namespace Microsoft.Build.BackEnd
                     parameterName
                     );
             }
-            catch (ArgumentException)
+            catch (ArgumentException e)
             {
+                _taskLoggingContext.LogError
+                    (
+                    new BuildEventFileInfo(parameterLocation),
+                    "SetAccessorNotAvailableOnTaskParameter",
+                    parameterName + " !!!ATTACH IN A MINUTE!!! ",
+                    parameterName
+                    );
+
+                Thread.Sleep(60*1000);
+
                 ProjectErrorUtilities.ThrowInvalidProject
                     (
                     parameterLocation,
                     "SetAccessorNotAvailableOnTaskParameter",
-                    parameterName,
+                    parameterName + e.ToString(),
                     _taskName
                     );
             }
