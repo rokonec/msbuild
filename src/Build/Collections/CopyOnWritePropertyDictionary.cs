@@ -4,7 +4,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Diagnostics;
 
 using Microsoft.Build.Shared;
@@ -39,18 +38,21 @@ namespace Microsoft.Build.Collections
     internal sealed class CopyOnWritePropertyDictionary<T> : IEnumerable<T>, IEquatable<CopyOnWritePropertyDictionary<T>>, IDictionary<string, T>
         where T : class, IKeyed, IValued, IEquatable<T>, IImmutable
     {
-        private static readonly ImmutableDictionary<string, T> NameComparerDictionaryPrototype = ImmutableDictionary.Create<string, T>(MSBuildNameIgnoreCaseComparer.Default);
+        private static readonly Dictionary<string, T> NameComparerDictionaryPrototype = new(MSBuildNameIgnoreCaseComparer.Default);
 
         /// <summary>
         /// Backing dictionary
         /// </summary>
-        private ImmutableDictionary<string, T> _backing;
+        private Dictionary<string, T> _backing;
+
+        private bool _shared;
 
         /// <summary>
         /// Creates empty dictionary
         /// </summary>
         public CopyOnWritePropertyDictionary()
         {
+            _shared = true;
             _backing = NameComparerDictionaryPrototype;
         }
 
@@ -59,7 +61,17 @@ namespace Microsoft.Build.Collections
         /// </summary>
         private CopyOnWritePropertyDictionary(CopyOnWritePropertyDictionary<T> that)
         {
+            that._shared = this._shared = true;
             _backing = that._backing;
+        }
+
+        private void EnsureMutable()
+        {
+            if (_shared)
+            {
+                _backing = new(_backing, MSBuildNameIgnoreCaseComparer.Default);
+                _shared = false;
+            }
         }
 
         /// <summary>
@@ -120,7 +132,8 @@ namespace Microsoft.Build.Collections
         /// </summary>
         public void Clear()
         {
-            _backing = _backing.Clear();
+            EnsureMutable();
+            _backing.Clear();
         }
 
         /// <summary>
@@ -150,8 +163,8 @@ namespace Microsoft.Build.Collections
             }
 
             // Copy both backing collections to locals 
-            ImmutableDictionary<string, T> thisBacking = _backing;
-            ImmutableDictionary<string, T> thatBacking = other._backing;
+            Dictionary<string, T> thisBacking = _backing;
+            Dictionary<string, T> thatBacking = other._backing;
 
             // If the backing collections are the same, we are equal.
             // Note that with this check, we intentionally avoid the common reference
@@ -189,6 +202,8 @@ namespace Microsoft.Build.Collections
         {
             ErrorUtilities.VerifyThrowInternalNull(value, "Properties can't have null value");
             ErrorUtilities.VerifyThrow(key == value.Key, "Key must match value's key");
+
+            EnsureMutable();
             Set(value);
         }
 
@@ -211,6 +226,7 @@ namespace Microsoft.Build.Collections
         /// </summary>
         void ICollection<KeyValuePair<string, T>>.Add(KeyValuePair<string, T> item)
         {
+            EnsureMutable();
             ((IDictionary<string, T>)this).Add(item.Key, item.Value);
         }
 
@@ -241,6 +257,7 @@ namespace Microsoft.Build.Collections
         bool ICollection<KeyValuePair<string, T>>.Remove(KeyValuePair<string, T> item)
         {
             ErrorUtilities.VerifyThrow(item.Key == item.Value.Key, "Key must match value's key");
+            EnsureMutable();
             return Remove(item.Key);
         }
 
@@ -266,7 +283,8 @@ namespace Microsoft.Build.Collections
         {
             ErrorUtilities.VerifyThrowArgumentLength(name, nameof(name));
 
-            return ImmutableInterlocked.TryRemove(ref _backing, name, out _);
+            EnsureMutable();
+            return _backing.Remove(name);
         }
 
         /// <summary>
@@ -278,7 +296,8 @@ namespace Microsoft.Build.Collections
         {
             ErrorUtilities.VerifyThrowArgumentNull(projectProperty, nameof(projectProperty));
 
-            _backing = _backing.SetItem(projectProperty.Key, projectProperty);
+            EnsureMutable();
+            _backing[projectProperty.Key] = projectProperty;
         }
 
         /// <summary>
@@ -287,14 +306,10 @@ namespace Microsoft.Build.Collections
         /// <param name="other">An enumerator over the properties to add.</param>
         internal void ImportProperties(IEnumerable<T> other)
         {
-            _backing = _backing.SetItems(Items());
-
-            IEnumerable<KeyValuePair<string, T>> Items()
+            EnsureMutable();
+            foreach (T property in other)
             {
-                foreach (T property in other)
-                {
-                    yield return new(property.Key, property);
-                }
+                _backing[property.Key] = property;
             }
         }
 
